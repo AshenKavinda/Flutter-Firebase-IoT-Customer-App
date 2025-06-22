@@ -1,0 +1,19 @@
+{
+  "deleted": false,
+  "location": {
+    "latitude": 6.065227,
+    "longitude": 80.202575
+  },
+  "lockers": [
+    {
+      "id": "97864U26",
+      "status": "available"
+    },
+    {
+      "id": "20691490",
+      "status": "available"
+    }
+  ],
+  "status": "available",
+  "timestamp": "2025-06-20T13:58:18+05:30"
+}
