@@ -1,6 +1,7 @@
 import 'package:customer_app/sevices/database.dart';
 import 'package:flutter/material.dart';
 import 'package:customer_app/utils/theme.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ConfirmReservationPage extends StatefulWidget {
   final String lockerId;
@@ -111,6 +112,16 @@ class _ConfirmReservationPageState extends State<ConfirmReservationPage> {
         true,
       );
       if (locked) {
+        // Add reservation record
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          await DatabaseService().addReservation(
+            userId: user.uid,
+            lockerId: widget.lockerId,
+            timestamp: DateTime.now(),
+          );
+          await DatabaseService().setLockerReserved(widget.lockerId, true);
+        }
         // Reset confirmation field to false
         await DatabaseService().setLockerConfirmation(widget.lockerId, false);
         setState(() {
