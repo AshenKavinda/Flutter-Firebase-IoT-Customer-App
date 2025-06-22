@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:customer_app/sevices/database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'LokerUnlockPage.dart';
+import 'BillingPage.dart';
 import '../utils/theme.dart';
 
 class MyReservationPage extends StatefulWidget {
@@ -104,7 +104,11 @@ class _MyReservationPageState extends State<MyReservationPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => LokerUnlockPage(lockerId: lockerId),
+                          builder:
+                              (_) => BillingPage(
+                                reservationDocId: reservations[index].id,
+                                userId: user!.uid,
+                              ),
                         ),
                       );
                     },
