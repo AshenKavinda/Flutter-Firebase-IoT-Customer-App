@@ -1,19 +1,40 @@
 {
   "deleted": false,
   "location": {
-    "latitude": 6.065227,
-    "longitude": 80.202575
+    "latitude": 6.065252,
+    "longitude": 80.202616
   },
   "lockers": [
     {
-      "id": "97864U26",
+      "confirmation": false,
+      "id": "4106UX2B",
+      "locked": false,
       "status": "available"
     },
     {
-      "id": "20691490",
+      "confirmation": false,
+      "id": "99P60K82",
+      "locked": false,
+      "status": "available"
+    },
+    {
+      "confirmation": false,
+      "id": "8Nv40rwr",
+      "locked": false,
+      "status": "available"
+    },
+    {
+      "confirmation": false,
+      "id": "18988366",
+      "locked": false,
+      "status": "available"
+    },
+    {
+      "confirmation": false,
+      "id": "N8i1Hr8S",
+      "locked": false,
       "status": "available"
     }
   ],
-  "status": "available",
-  "timestamp": "2025-06-20T13:58:18+05:30"
+  "timestamp": "2025-06-22T09:49:55Z"
 }
