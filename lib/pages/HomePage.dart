@@ -1,6 +1,7 @@
 import 'package:customer_app/component/CustomNavBar.dart';
 import 'package:customer_app/pages/MakeReservation.dart';
 import 'package:customer_app/pages/ViewUnitsPage.dart';
+import 'package:customer_app/pages/Profile.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
@@ -17,7 +18,7 @@ class _HomePageState extends State<HomePage> {
     ViewUnitsPage(),
     MakeReservationPage(),
     Center(child: Text('Alerts Page')),
-    Center(child: Text('Profile Page')),
+    ProfilePage(),
   ];
 
   void _onTabTapped(int index) {
