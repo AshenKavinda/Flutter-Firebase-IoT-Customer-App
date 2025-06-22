@@ -182,6 +182,7 @@ class _BillingPageState extends State<BillingPage> {
                               (context) => PaymentPage(
                                 total: total,
                                 reservationDocId: widget.reservationDocId,
+                                lokerId: lockerId,
                               ),
                         ),
                       );
