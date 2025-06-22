@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:customer_app/pages/unitDetailsPage.dart';
 import 'package:customer_app/sevices/database.dart';
 import 'package:customer_app/utils/theme.dart';
 import 'package:flutter/material.dart';
@@ -57,6 +58,7 @@ class _ViewUnitsPageState extends State<ViewUnitsPage> {
       return;
     }
     print('Retrieved unit docs:');
+    Set<Marker> newMarkers = {};
     for (var doc in docs) {
       print(doc.data());
       final data = doc.data() as Map<String, dynamic>;
@@ -65,13 +67,20 @@ class _ViewUnitsPageState extends State<ViewUnitsPage> {
         final marker = Marker(
           markerId: MarkerId(doc.id),
           position: LatLng(loc.latitude, loc.longitude),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          onTap: () {
+            setState(() {
+              _selectedUnitId = doc.id;
+            });
+          },
           infoWindow: InfoWindow(title: doc.id),
         );
-        setState(() {
-          _markers.add(marker);
-        });
+        newMarkers.add(marker);
       }
     }
+    setState(() {
+      _markers = newMarkers;
+    });
   }
 
   @override
@@ -97,6 +106,12 @@ class _ViewUnitsPageState extends State<ViewUnitsPage> {
               // _loadUnitMarkers();
             },
             myLocationEnabled: true,
+            zoomControlsEnabled: false,
+            onTap: (LatLng latLng) {
+              setState(() {
+                _selectedUnitId = null;
+              });
+            },
           ),
           Positioned(
             top: 10,
@@ -121,82 +136,7 @@ class _ViewUnitsPageState extends State<ViewUnitsPage> {
                         ),
                         IconButton(
                           icon: Icon(Icons.search, color: AppColors.navyBlue),
-                          onPressed: () async {
-                            if (_searchController.text.isEmpty) return;
-                            // Geocode area name
-                            List<Location> locations;
-                            try {
-                              locations = await locationFromAddress(
-                                _searchController.text.trim(),
-                              );
-                            } catch (e) {
-                              locations = [];
-                            }
-                            if (locations.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Area not found. Please enter a valid area name.',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-                            final areaLatLng = LatLng(
-                              locations[0].latitude,
-                              locations[0].longitude,
-                            );
-                            // Get all available units
-                            final db = DatabaseService();
-                            final docs = await db.getAllUnitDocs();
-                            List<Map<String, dynamic>> availableUnits = [];
-                            for (var doc in docs) {
-                              final data = doc.data() as Map<String, dynamic>;
-                              if (data['status'] == 'available' &&
-                                  data.containsKey('location')) {
-                                final GeoPoint loc = data['location'];
-                                availableUnits.add({
-                                  'id': doc.id,
-                                  'lat': loc.latitude,
-                                  'lng': loc.longitude,
-                                });
-                              }
-                            }
-                            // Find units within 5km
-                            List<Map<String, dynamic>> nearbyUnits =
-                                availableUnits.where((unit) {
-                                  double distance = Geolocator.distanceBetween(
-                                    areaLatLng.latitude,
-                                    areaLatLng.longitude,
-                                    unit['lat'],
-                                    unit['lng'],
-                                  );
-                                  return distance <= 5000;
-                                }).toList();
-                            if (nearbyUnits.isNotEmpty) {
-                              // Move map to first nearby unit
-                              _mapController.animateCamera(
-                                CameraUpdate.newLatLngZoom(
-                                  LatLng(
-                                    nearbyUnits[0]['lat'],
-                                    nearbyUnits[0]['lng'],
-                                  ),
-                                  14,
-                                ),
-                              );
-                              setState(() {
-                                _selectedUnitId = nearbyUnits[0]['id'];
-                              });
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'No available units found in this area.',
-                                  ),
-                                ),
-                              );
-                            }
-                          },
+                          onPressed: () async {},
                         ),
                       ],
                     ),
@@ -205,56 +145,48 @@ class _ViewUnitsPageState extends State<ViewUnitsPage> {
               ],
             ),
           ),
-          if (_selectedUnitId != null)
-            Positioned(
-              bottom: 20,
-              left: 20,
-              child: SizedBox(
-                width: 140, // medium size
-                height: 48,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.navyBlue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8), // square-ish
-                    ),
-                    alignment: Alignment.centerLeft, // left align
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                  ),
-                  icon: Icon(
-                    Icons.visibility,
-                    color: Colors.white,
-                  ), // proper icon
-                  label: Text(
-                    'View',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onPressed: () => {},
-                ),
-              ),
-            ),
         ],
       ),
-      floatingActionButton: Padding(
-        padding: EdgeInsets.only(left: 25, top: 10, right: 10, bottom: 25),
-        child: Align(
-          alignment: Alignment.bottomLeft,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(height: 10),
-              FloatingActionButton(
-                heroTag: 'location',
-                backgroundColor: Colors.orange,
-                child: Icon(Icons.my_location, color: AppColors.navyBlue),
-                onPressed: _getCurrentLocation,
+      floatingActionButton: Stack(
+        children: [
+          // About Unit button (bottom left)
+          if (_selectedUnitId != null)
+            Positioned(
+              left: 25,
+              bottom: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.navyBlue,
+                  foregroundColor: Colors.white,
+                  minimumSize: Size(180, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder:
+                          (context) =>
+                              UnitDetailsPage(unitId: _selectedUnitId!),
+                    ),
+                  );
+                },
+                child: Text('About Unit'),
               ),
-            ],
+            ),
+          // My Location FAB (bottom right)
+          Positioned(
+            right: 0,
+            bottom: 50,
+            child: FloatingActionButton(
+              heroTag: 'location',
+              backgroundColor: Colors.orange,
+              child: Icon(Icons.my_location, color: AppColors.navyBlue),
+              onPressed: _getCurrentLocation,
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
