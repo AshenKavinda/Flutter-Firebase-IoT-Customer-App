@@ -1,26 +1,28 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as material;
 import 'package:flutter_stripe/flutter_stripe.dart';
 import '../sevices/database.dart';
 import '../sevices/payment_service.dart';
+import '../utils/theme.dart';
+import 'package:customer_app/pages/HomePage.dart';
 
-class PaymentPage extends StatefulWidget {
+class PaymentPage extends material.StatefulWidget {
   final int total;
   final String reservationDocId;
   final String lokerId;
   const PaymentPage({
-    Key? key,
+    material.Key? key,
     required this.total,
     required this.reservationDocId,
     required this.lokerId,
   }) : super(key: key);
 
   @override
-  State<PaymentPage> createState() => _PaymentPageState();
+  material.State<PaymentPage> createState() => _PaymentPageState();
 }
 
-class _PaymentPageState extends State<PaymentPage> {
+class _PaymentPageState extends material.State<PaymentPage> {
   bool _loading = false;
   String? _error;
 
@@ -54,18 +56,18 @@ class _PaymentPageState extends State<PaymentPage> {
         timestamp: DateTime.now(),
       );
       if (!mounted) return;
-      await showDialog(
+      await material.showDialog(
         context: context,
         builder:
-            (context) => AlertDialog(
-              title: const Text('Payment Successful'),
-              content: const Text('Your payment was successful.'),
+            (context) => material.AlertDialog(
+              title: const material.Text('Payment Successful'),
+              content: const material.Text('Your payment was successful.'),
               actions: [
-                TextButton(
+                material.TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    material.Navigator.of(context).pop();
                   },
-                  child: const Text('OK'),
+                  child: const material.Text('OK'),
                 ),
               ],
             ),
@@ -94,6 +96,13 @@ class _PaymentPageState extends State<PaymentPage> {
         await db.setLockerConfirmation(widget.lokerId, false);
       }
       // --- End Locker confirmation/locking logic ---
+      // Redirect to HomePage with reservation tab selected (index 2)
+      material.Navigator.of(context).pushAndRemoveUntil(
+        material.MaterialPageRoute(
+          builder: (context) => HomePage(initialTab: 2),
+        ),
+        (route) => false,
+      );
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -106,29 +115,130 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Payment')),
-      body: Center(
+  material.Widget build(material.BuildContext context) {
+    return material.Scaffold(
+      appBar: material.AppBar(
+        title: const material.Text('Payment'),
+        backgroundColor: AppColors.navyBlue,
+        foregroundColor: material.Colors.white,
+        elevation: 0,
+      ),
+      backgroundColor: AppColors.navyBlue.withOpacity(0.03),
+      body: material.Center(
         child:
             _loading
-                ? const CircularProgressIndicator()
-                : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Proceed to pay Rs. ${widget.total} for reservation ${widget.reservationDocId}',
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _handlePayment,
-                      child: const Text('Pay Now'),
-                    ),
-                    if (_error != null) ...[
-                      const SizedBox(height: 16),
-                      Text(_error!, style: const TextStyle(color: Colors.red)),
+                ? const material.CircularProgressIndicator(
+                  color: AppColors.navyBlue,
+                )
+                : material.Padding(
+                  padding: const material.EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                  ),
+                  child: material.Column(
+                    mainAxisAlignment: material.MainAxisAlignment.center,
+                    crossAxisAlignment: material.CrossAxisAlignment.center,
+                    children: [
+                      material.Card(
+                        color: AppColors.tealBlue,
+                        shape: material.RoundedRectangleBorder(
+                          borderRadius: material.BorderRadius.circular(16),
+                        ),
+                        elevation: 4,
+                        child: material.Padding(
+                          padding: const material.EdgeInsets.all(24.0),
+                          child: material.Column(
+                            children: [
+                              material.Icon(
+                                material.Icons.payment,
+                                color: material.Colors.white,
+                                size: 40,
+                              ),
+                              const material.SizedBox(height: 16),
+                              material.Text(
+                                'Total Payment',
+                                style: material.TextStyle(
+                                  color: material.Colors.white70,
+                                  fontSize: 16,
+                                  fontWeight: material.FontWeight.w500,
+                                ),
+                              ),
+                              const material.SizedBox(height: 8),
+                              material.Text(
+                                'Rs. ${widget.total}',
+                                style: material.TextStyle(
+                                  color: material.Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: material.FontWeight.bold,
+                                ),
+                              ),
+                              const material.SizedBox(height: 12),
+                              material.Text(
+                                'Reservation ID: ${widget.reservationDocId}',
+                                style: material.TextStyle(
+                                  color: material.Colors.white70,
+                                  fontSize: 14,
+                                ),
+                                textAlign: material.TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const material.SizedBox(height: 32),
+                      material.SizedBox(
+                        width: double.infinity,
+                        child: material.ElevatedButton(
+                          style: material.ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.navyBlue,
+                            foregroundColor: material.Colors.white,
+                            padding: const material.EdgeInsets.symmetric(
+                              vertical: 16,
+                            ),
+                            shape: material.RoundedRectangleBorder(
+                              borderRadius: material.BorderRadius.circular(12),
+                            ),
+                            textStyle: const material.TextStyle(
+                              fontSize: 18,
+                              fontWeight: material.FontWeight.bold,
+                            ),
+                            elevation: 2,
+                          ),
+                          onPressed: _handlePayment,
+                          child: const material.Text('Pay Now'),
+                        ),
+                      ),
+                      if (_error != null) ...[
+                        const material.SizedBox(height: 20),
+                        material.Container(
+                          padding: const material.EdgeInsets.all(12),
+                          decoration: material.BoxDecoration(
+                            color: material.Colors.red.withOpacity(0.1),
+                            borderRadius: material.BorderRadius.circular(8),
+                          ),
+                          child: material.Row(
+                            mainAxisAlignment:
+                                material.MainAxisAlignment.center,
+                            children: [
+                              material.Icon(
+                                material.Icons.error,
+                                color: material.Colors.red[700],
+                              ),
+                              const material.SizedBox(width: 8),
+                              material.Expanded(
+                                child: material.Text(
+                                  _error!,
+                                  style: const material.TextStyle(
+                                    color: material.Colors.red,
+                                    fontWeight: material.FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
       ),
     );

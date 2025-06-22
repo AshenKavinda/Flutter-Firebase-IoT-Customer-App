@@ -41,6 +41,7 @@ class _ViewUnitsPageState extends State<ViewUnitsPage> {
     }
 
     Position position = await Geolocator.getCurrentPosition();
+    if (!mounted) return;
     setState(() => _currentPosition = position);
     _mapController.animateCamera(
       CameraUpdate.newLatLngZoom(
