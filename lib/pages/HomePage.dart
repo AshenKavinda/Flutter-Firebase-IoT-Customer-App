@@ -1,5 +1,6 @@
 import 'package:customer_app/component/CustomNavBar.dart';
 import 'package:customer_app/pages/MakeReservation.dart';
+import 'package:customer_app/pages/MyReservationPage.dart';
 import 'package:customer_app/pages/ViewUnitsPage.dart';
 import 'package:customer_app/pages/Profile.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +18,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _pages = [
     ViewUnitsPage(),
     MakeReservationPage(),
-    Center(child: Text('Alerts Page')),
+    MyReservationPage(),
     ProfilePage(),
   ];
 

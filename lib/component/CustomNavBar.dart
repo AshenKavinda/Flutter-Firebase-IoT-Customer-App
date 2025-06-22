@@ -22,9 +22,12 @@ class CustomNavBar extends StatelessWidget {
         BottomNavigationBarItem(icon: Icon(Icons.location_pin), label: 'Home'),
         BottomNavigationBarItem(
           icon: Icon(Icons.qr_code_scanner),
-          label: 'Search',
+          label: 'Make',
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.book_online), label: 'Alerts'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.book_online),
+          label: 'Reservations',
+        ),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
       ],
     );

@@ -138,4 +138,18 @@ class DatabaseService {
   Future<Map<String, dynamic>?> getLockerStatusById(String lockerId) async {
     return await getLockerDetailsById(lockerId);
   }
+
+  /// Get all active reservations for a user
+  Future<List<QueryDocumentSnapshot>> getActiveReservationsForUser(
+    String userId,
+  ) async {
+    final snapshot =
+        await FirebaseFirestore.instance
+            .collection('reservations')
+            .where('userID', isEqualTo: userId)
+            .where('active', isEqualTo: true)
+            .orderBy('timestamp', descending: true)
+            .get();
+    return snapshot.docs;
+  }
 }
