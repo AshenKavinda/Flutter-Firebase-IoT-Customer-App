@@ -6,14 +6,15 @@ import 'package:customer_app/pages/Profile.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  final int initialTab;
+  const HomePage({Key? key, this.initialTab = 0}) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
 
   final List<Widget> _pages = [
     ViewUnitsPage(),
@@ -21,6 +22,12 @@ class _HomePageState extends State<HomePage> {
     MyReservationPage(),
     ProfilePage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialTab;
+  }
 
   void _onTabTapped(int index) {
     setState(() {

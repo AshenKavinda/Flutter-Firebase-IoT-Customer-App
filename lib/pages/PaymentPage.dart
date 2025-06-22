@@ -5,6 +5,7 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import '../sevices/database.dart';
 import '../sevices/payment_service.dart';
 import '../utils/theme.dart';
+import 'package:customer_app/pages/HomePage.dart';
 
 class PaymentPage extends material.StatefulWidget {
   final int total;
@@ -95,6 +96,13 @@ class _PaymentPageState extends material.State<PaymentPage> {
         await db.setLockerConfirmation(widget.lokerId, false);
       }
       // --- End Locker confirmation/locking logic ---
+      // Redirect to HomePage with reservation tab selected (index 2)
+      material.Navigator.of(context).pushAndRemoveUntil(
+        material.MaterialPageRoute(
+          builder: (context) => HomePage(initialTab: 2),
+        ),
+        (route) => false,
+      );
     } catch (e) {
       setState(() {
         _error = e.toString();
