@@ -23,7 +23,7 @@ class _MakeReservationPageState extends State<MakeReservationPage> {
     // var result = await BarcodeScanner.scan();
     // setState(() { _lockerIdController.text = result.rawContent; });
     setState(() {
-      _lockerIdController.text = "m6o8am68"; // Placeholder for demo
+      _lockerIdController.text = "qmzI38v8"; // Placeholder for demo
     });
   }
 
@@ -56,6 +56,17 @@ class _MakeReservationPageState extends State<MakeReservationPage> {
           orElse: () => {},
         );
         if (locker.isNotEmpty && locker['status'] == 'available') {
+          if (locker['reserved'] == true) {
+            setState(() {
+              _errorText = 'Locker is already reserved.';
+            });
+            Fluttertoast.showToast(
+              msg: 'Locker is already reserved.',
+              backgroundColor: Colors.red,
+              textColor: Colors.white,
+            );
+            return;
+          }
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => ConfirmReservationPage(lockerId: lockerId),

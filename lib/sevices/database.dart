@@ -102,6 +102,38 @@ class DatabaseService {
     return true;
   }
 
+  /// Add a reservation record to the reservations collection
+  Future<bool> addReservation({
+    required String userId,
+    required String lockerId,
+    required DateTime timestamp,
+  }) async {
+    try {
+      await FirebaseFirestore.instance.collection('reservations').add({
+        'timestamp': timestamp,
+        'userID': userId,
+        'lockerID': lockerId,
+        'active': true,
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Set the 'reserved' field of a locker to true
+  Future<bool> setLockerReserved(String lockerId, bool reserved) async {
+    final details = await getLockerDetailsById(lockerId);
+    if (details == null) return false;
+    final doc = details['unitDoc'] as DocumentSnapshot;
+    final lockerIndex = details['lockerIndex'] as int;
+    final data = doc.data() as Map<String, dynamic>;
+    final lockers = List<Map<String, dynamic>>.from(data['lockers']);
+    lockers[lockerIndex]['reserved'] = reserved;
+    await _unitsCollection.doc(doc.id).update({'lockers': lockers});
+    return true;
+  }
+
   /// Get the latest locker details (for polling)
   Future<Map<String, dynamic>?> getLockerStatusById(String lockerId) async {
     return await getLockerDetailsById(lockerId);
