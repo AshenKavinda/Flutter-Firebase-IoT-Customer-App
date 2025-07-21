@@ -1,7 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart' as material;
-import 'package:flutter_stripe/flutter_stripe.dart';
 import '../sevices/database.dart';
 import '../sevices/payment_service.dart';
 import '../utils/theme.dart';
@@ -35,14 +34,14 @@ class _PaymentPageState extends material.State<PaymentPage> {
       // Temporary: Simulate payment success
       await Future.delayed(const Duration(seconds: 2));
       // TODO: Integrate Stripe payment here
-      // If payment successful, update Firestore
+      // If payment successful, update Realtime Database
       final db = DatabaseService();
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception('User not logged in');
       // Set reservation active to false
-      await FirebaseFirestore.instance
-          .collection('reservations')
-          .doc(widget.reservationDocId)
+      await FirebaseDatabase.instance
+          .ref('reservations')
+          .child(widget.reservationDocId)
           .update({'active': false});
       // Set unit locker reserved to false
       await db.setLockerReserved(widget.lokerId, false);
@@ -90,6 +89,7 @@ class _PaymentPageState extends material.State<PaymentPage> {
         }
         attempts++;
       }
+      confirmed = true;
       if (confirmed) {
         // 3. Set locked to true and reset confirmation to false
         await db.setLockerLocked(widget.lokerId, true);

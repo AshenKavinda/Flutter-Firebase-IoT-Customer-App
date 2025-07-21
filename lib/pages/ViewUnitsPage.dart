@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:customer_app/pages/unitDetailsPage.dart';
 import 'package:customer_app/sevices/database.dart';
 import 'package:customer_app/utils/theme.dart';
@@ -6,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:geocoding/geocoding.dart';
 
 class ViewUnitsPage extends StatefulWidget {
   @override
@@ -61,20 +58,27 @@ class _ViewUnitsPageState extends State<ViewUnitsPage> {
     print('Retrieved unit docs:');
     Set<Marker> newMarkers = {};
     for (var doc in docs) {
-      print(doc.data());
-      final data = doc.data() as Map<String, dynamic>;
+      print(doc.value);
+      final data = Map<String, dynamic>.from(
+        doc.value as Map<Object?, Object?>,
+      );
       if (data.containsKey('location')) {
-        final GeoPoint loc = data['location'];
+        final location = Map<String, dynamic>.from(
+          data['location'] as Map<Object?, Object?>,
+        );
         final marker = Marker(
-          markerId: MarkerId(doc.id),
-          position: LatLng(loc.latitude, loc.longitude),
+          markerId: MarkerId(doc.key!),
+          position: LatLng(
+            location['latitude'].toDouble(),
+            location['longitude'].toDouble(),
+          ),
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
           onTap: () {
             setState(() {
-              _selectedUnitId = doc.id;
+              _selectedUnitId = doc.key!;
             });
           },
-          infoWindow: InfoWindow(title: doc.id),
+          infoWindow: InfoWindow(title: doc.key!),
         );
         newMarkers.add(marker);
       }

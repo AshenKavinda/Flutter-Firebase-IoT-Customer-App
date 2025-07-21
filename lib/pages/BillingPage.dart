@@ -40,26 +40,27 @@ class _BillingPageState extends State<BillingPage> {
     final reservationDocs = await db.getActiveReservationsForUser(
       widget.userId,
     );
-    final doc = reservationDocs.firstWhereOrNull(
-      (d) => d.id == widget.reservationDocId,
-    );
+    final doc =
+        reservationDocs
+                .where((d) => d.key == widget.reservationDocId)
+                .isNotEmpty
+            ? reservationDocs
+                .where((d) => d.key == widget.reservationDocId)
+                .first
+            : null;
     if (doc == null) {
       setState(() {
         loading = false;
       });
       return;
     }
-    reservationData = doc.data() as Map<String, dynamic>;
+    reservationData = Map<String, dynamic>.from(
+      doc.value as Map<Object?, Object?>,
+    );
     lockerId = reservationData!["lockerID"];
-    // Handle Firestore Timestamp or ISO string
+    // Handle timestamp string
     final ts = reservationData!["timestamp"];
-    if (ts is DateTime) {
-      reservedDate = ts;
-    } else if (ts is String) {
-      reservedDate = DateTime.tryParse(ts);
-    } else if (ts != null && ts.toString().contains('Timestamp')) {
-      reservedDate = (ts as dynamic).toDate();
-    }
+    reservedDate = DateTime.tryParse(ts ?? '');
     reservedTime =
         reservedDate != null ? DateFormat('hh:mm a').format(reservedDate!) : '';
     // Get locker details

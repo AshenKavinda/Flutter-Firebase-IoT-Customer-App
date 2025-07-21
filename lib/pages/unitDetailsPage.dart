@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../sevices/database.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import '../utils/theme.dart';
 
 class UnitDetailsPage extends StatelessWidget {
@@ -8,7 +8,7 @@ class UnitDetailsPage extends StatelessWidget {
 
   const UnitDetailsPage({Key? key, required this.unitId}) : super(key: key);
 
-  Future<DocumentSnapshot> _fetchUnit() async {
+  Future<DataSnapshot?> _fetchUnit() async {
     return await DatabaseService().getUnitById(unitId);
   }
 
@@ -21,7 +21,7 @@ class UnitDetailsPage extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: FutureBuilder<DocumentSnapshot>(
+      body: FutureBuilder<DataSnapshot?>(
         future: _fetchUnit(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -29,7 +29,9 @@ class UnitDetailsPage extends StatelessWidget {
               child: CircularProgressIndicator(color: AppColors.navyBlue),
             );
           }
-          if (!snapshot.hasData || !snapshot.data!.exists) {
+          if (!snapshot.hasData ||
+              snapshot.data == null ||
+              !snapshot.data!.exists) {
             return Center(
               child: Text(
                 'No data found for this unit.',
@@ -37,10 +39,19 @@ class UnitDetailsPage extends StatelessWidget {
               ),
             );
           }
-          final data = snapshot.data!.data() as Map<String, dynamic>;
-          final lockers = data['lockers'] as List<dynamic>? ?? [];
+          final data = Map<String, dynamic>.from(
+            snapshot.data!.value as Map<Object?, Object?>,
+          );
+          final lockersData = data['lockers'] as Map<Object?, Object?>? ?? {};
+          final lockers =
+              lockersData.values
+                  .map(
+                    (e) =>
+                        Map<String, dynamic>.from(e as Map<Object?, Object?>),
+                  )
+                  .toList();
           final availableCount =
-              lockers.where((l) => l['status'] == 'available').length;
+              lockers.where((l) => l['reserved'] == false).length;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -76,7 +87,7 @@ class UnitDetailsPage extends StatelessWidget {
                   itemCount: lockers.length,
                   itemBuilder: (context, index) {
                     final locker = lockers[index];
-                    final isAvailable = locker['status'] == 'available';
+                    final isAvailable = locker['reserved'] == false;
                     return Card(
                       color: Colors.white,
                       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 6),

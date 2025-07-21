@@ -1,62 +1,74 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class DatabaseService {
-  final CollectionReference _unitsCollection = FirebaseFirestore.instance
-      .collection('units');
+  final DatabaseReference _unitsRef = FirebaseDatabase.instance.ref('units');
+  final DatabaseReference _reservationsRef = FirebaseDatabase.instance.ref(
+    'reservations',
+  );
 
   /// Get all unit documents (for marker loading)
-  Future<List<QueryDocumentSnapshot>> getAllUnitDocs() async {
-    QuerySnapshot snapshot =
-        await _unitsCollection
-            .where('deleted', isEqualTo: false)
-            .where('status', isEqualTo: 'available')
-            .get();
-    return snapshot.docs;
+  Future<List<DataSnapshot>> getAllUnitDocs() async {
+    final snapshot = await _unitsRef.get();
+    if (!snapshot.exists) return [];
+
+    final units = <DataSnapshot>[];
+    for (final child in snapshot.children) {
+      final data = child.value as Map<Object?, Object?>?;
+      if (data != null &&
+          data['deleted'] == false &&
+          data['status'] == 'available') {
+        units.add(child);
+      }
+    }
+    return units;
   }
 
-  /// Get a unit document by its Firestore document ID
-  Future<DocumentSnapshot> getUnitById(String id) async {
-    return await _unitsCollection.doc(id).get();
+  /// Get a unit document by its Realtime Database key
+  Future<DataSnapshot?> getUnitById(String id) async {
+    final snapshot = await _unitsRef.child(id).get();
+    return snapshot.exists ? snapshot : null;
   }
 
   /// Get the unit document that contains a locker with the given lockerId
-  Future<DocumentSnapshot?> getUnitByLockerId(String lockerId) async {
-    // Firestore does not support querying nested array objects directly by field value,
-    // so we fetch units with status 'available' and filter in Dart.
-    QuerySnapshot snapshot =
-        await _unitsCollection
-            .where('deleted', isEqualTo: false)
-            .where('status', isEqualTo: 'available')
-            .get();
-    for (var doc in snapshot.docs) {
-      final data = doc.data() as Map<String, dynamic>;
-      if (data['lockers'] != null) {
-        final lockers = List<Map<String, dynamic>>.from(data['lockers']);
-        for (var locker in lockers) {
-          if (locker['id'] == lockerId) {
-            return doc;
-          }
+  Future<DataSnapshot?> getUnitByLockerId(String lockerId) async {
+    // Realtime Database: fetch all available units and filter in Dart
+    final snapshot = await _unitsRef.get();
+    if (!snapshot.exists) return null;
+
+    for (final child in snapshot.children) {
+      final data = child.value as Map<Object?, Object?>?;
+      if (data != null &&
+          data['deleted'] == false &&
+          data['status'] == 'available' &&
+          data['lockers'] != null) {
+        final lockersData = data['lockers'] as Map<Object?, Object?>;
+        if (lockersData.containsKey(lockerId)) {
+          return child;
         }
       }
     }
     return null;
   }
 
-  /// Get locker details (unit doc, locker map, locker index) by lockerId
+  /// Get locker details (unit snapshot, locker map, locker index) by lockerId
   Future<Map<String, dynamic>?> getLockerDetailsById(String lockerId) async {
-    QuerySnapshot snapshot =
-        await _unitsCollection
-            .where('deleted', isEqualTo: false)
-            .where('status', isEqualTo: 'available')
-            .get();
-    for (var doc in snapshot.docs) {
-      final data = doc.data() as Map<String, dynamic>;
-      if (data['lockers'] != null) {
-        final lockers = List<Map<String, dynamic>>.from(data['lockers']);
-        for (var i = 0; i < lockers.length; i++) {
-          if (lockers[i]['id'] == lockerId) {
-            return {'unitDoc': doc, 'locker': lockers[i], 'lockerIndex': i};
-          }
+    final snapshot = await _unitsRef.get();
+    if (!snapshot.exists) return null;
+
+    for (final child in snapshot.children) {
+      final data = child.value as Map<Object?, Object?>?;
+      if (data != null &&
+          data['deleted'] == false &&
+          data['status'] == 'available' &&
+          data['lockers'] != null) {
+        final lockersData = data['lockers'] as Map<Object?, Object?>;
+        if (lockersData.containsKey(lockerId)) {
+          final lockerData = lockersData[lockerId] as Map<Object?, Object?>;
+          return {
+            'unitSnapshot': child,
+            'locker': Map<String, dynamic>.from(lockerData),
+            'lockerId': lockerId,
+          };
         }
       }
     }
@@ -67,12 +79,13 @@ class DatabaseService {
   Future<bool> unlockLocker(String lockerId) async {
     final details = await getLockerDetailsById(lockerId);
     if (details == null) return false;
-    final doc = details['unitDoc'] as DocumentSnapshot;
-    final lockerIndex = details['lockerIndex'] as int;
-    final data = doc.data() as Map<String, dynamic>;
-    final lockers = List<Map<String, dynamic>>.from(data['lockers']);
-    lockers[lockerIndex]['locked'] = false;
-    await _unitsCollection.doc(doc.id).update({'lockers': lockers});
+    final unitSnapshot = details['unitSnapshot'] as DataSnapshot;
+
+    await _unitsRef
+        .child(unitSnapshot.key!)
+        .child('lockers')
+        .child(lockerId)
+        .update({'locked': false});
     return true;
   }
 
@@ -80,12 +93,13 @@ class DatabaseService {
   Future<bool> setLockerLocked(String lockerId, bool locked) async {
     final details = await getLockerDetailsById(lockerId);
     if (details == null) return false;
-    final doc = details['unitDoc'] as DocumentSnapshot;
-    final lockerIndex = details['lockerIndex'] as int;
-    final data = doc.data() as Map<String, dynamic>;
-    final lockers = List<Map<String, dynamic>>.from(data['lockers']);
-    lockers[lockerIndex]['locked'] = locked;
-    await _unitsCollection.doc(doc.id).update({'lockers': lockers});
+    final unitSnapshot = details['unitSnapshot'] as DataSnapshot;
+
+    await _unitsRef
+        .child(unitSnapshot.key!)
+        .child('lockers')
+        .child(lockerId)
+        .update({'locked': locked});
     return true;
   }
 
@@ -93,12 +107,13 @@ class DatabaseService {
   Future<bool> setLockerConfirmation(String lockerId, bool confirmation) async {
     final details = await getLockerDetailsById(lockerId);
     if (details == null) return false;
-    final doc = details['unitDoc'] as DocumentSnapshot;
-    final lockerIndex = details['lockerIndex'] as int;
-    final data = doc.data() as Map<String, dynamic>;
-    final lockers = List<Map<String, dynamic>>.from(data['lockers']);
-    lockers[lockerIndex]['confirmation'] = confirmation;
-    await _unitsCollection.doc(doc.id).update({'lockers': lockers});
+    final unitSnapshot = details['unitSnapshot'] as DataSnapshot;
+
+    await _unitsRef
+        .child(unitSnapshot.key!)
+        .child('lockers')
+        .child(lockerId)
+        .update({'confirmation': confirmation});
     return true;
   }
 
@@ -109,8 +124,8 @@ class DatabaseService {
     required DateTime timestamp,
   }) async {
     try {
-      await FirebaseFirestore.instance.collection('reservations').add({
-        'timestamp': timestamp,
+      await _reservationsRef.push().set({
+        'timestamp': timestamp.toIso8601String(),
         'userID': userId,
         'lockerID': lockerId,
         'active': true,
@@ -125,12 +140,13 @@ class DatabaseService {
   Future<bool> setLockerReserved(String lockerId, bool reserved) async {
     final details = await getLockerDetailsById(lockerId);
     if (details == null) return false;
-    final doc = details['unitDoc'] as DocumentSnapshot;
-    final lockerIndex = details['lockerIndex'] as int;
-    final data = doc.data() as Map<String, dynamic>;
-    final lockers = List<Map<String, dynamic>>.from(data['lockers']);
-    lockers[lockerIndex]['reserved'] = reserved;
-    await _unitsCollection.doc(doc.id).update({'lockers': lockers});
+    final unitSnapshot = details['unitSnapshot'] as DataSnapshot;
+
+    await _unitsRef
+        .child(unitSnapshot.key!)
+        .child('lockers')
+        .child(lockerId)
+        .update({'reserved': reserved});
     return true;
   }
 
@@ -140,16 +156,31 @@ class DatabaseService {
   }
 
   /// Get all active reservations for a user
-  Future<List<QueryDocumentSnapshot>> getActiveReservationsForUser(
-    String userId,
-  ) async {
-    final snapshot =
-        await FirebaseFirestore.instance
-            .collection('reservations')
-            .where('userID', isEqualTo: userId)
-            .where('active', isEqualTo: true)
-            .orderBy('timestamp', descending: true)
-            .get();
-    return snapshot.docs;
+  Future<List<DataSnapshot>> getActiveReservationsForUser(String userId) async {
+    final snapshot = await _reservationsRef.get();
+    if (!snapshot.exists) return [];
+
+    final reservations = <DataSnapshot>[];
+    for (final child in snapshot.children) {
+      final data = child.value as Map<Object?, Object?>?;
+      if (data != null && data['userID'] == userId && data['active'] == true) {
+        reservations.add(child);
+      }
+    }
+
+    // Sort by timestamp (descending)
+    reservations.sort((a, b) {
+      final aData = a.value as Map<Object?, Object?>;
+      final bData = b.value as Map<Object?, Object?>;
+      final aTime =
+          DateTime.tryParse(aData['timestamp']?.toString() ?? '') ??
+          DateTime.now();
+      final bTime =
+          DateTime.tryParse(bData['timestamp']?.toString() ?? '') ??
+          DateTime.now();
+      return bTime.compareTo(aTime);
+    });
+
+    return reservations;
   }
 }
