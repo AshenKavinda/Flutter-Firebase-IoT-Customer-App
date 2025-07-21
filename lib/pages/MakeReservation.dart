@@ -23,7 +23,7 @@ class _MakeReservationPageState extends State<MakeReservationPage> {
     // var result = await BarcodeScanner.scan();
     // setState(() { _lockerIdController.text = result.rawContent; });
     setState(() {
-      _lockerIdController.text = "6gmuiwXb"; // Placeholder for demo
+      _lockerIdController.text = "lepSv9WU"; // Placeholder for demo
     });
   }
 
@@ -52,28 +52,18 @@ class _MakeReservationPageState extends State<MakeReservationPage> {
         final data = Map<String, dynamic>.from(
           doc.value as Map<Object?, Object?>,
         );
-        final lockersData = data['lockers'] as List<dynamic>?;
-        if (lockersData != null) {
-          final lockers =
-              lockersData
-                  .map(
-                    (e) =>
-                        Map<String, dynamic>.from(e as Map<Object?, Object?>),
-                  )
-                  .toList();
-          final locker = lockers.firstWhere(
-            (l) => l['id'] == lockerId,
-            orElse: () => {},
+        final lockersData = data['lockers'] as Map<Object?, Object?>?;
+        if (lockersData != null && lockersData.containsKey(lockerId)) {
+          final locker = Map<String, dynamic>.from(
+            lockersData[lockerId] as Map<Object?, Object?>,
           );
-          if (locker.isNotEmpty &&
-              locker['status'] == 'available' &&
-              locker['reserved'] == false) {
+          if (locker['status'] == 'available') {
             if (locker['reserved'] == true) {
               setState(() {
-                _errorText = 'Locker is already reserved or broken';
+                _errorText = 'Locker is already reserved.';
               });
               Fluttertoast.showToast(
-                msg: 'Locker is already reserved or broken',
+                msg: 'Locker is already reserved.',
                 backgroundColor: Colors.red,
                 textColor: Colors.white,
               );

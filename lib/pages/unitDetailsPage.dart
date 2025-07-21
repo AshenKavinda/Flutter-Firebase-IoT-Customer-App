@@ -42,7 +42,14 @@ class UnitDetailsPage extends StatelessWidget {
           final data = Map<String, dynamic>.from(
             snapshot.data!.value as Map<Object?, Object?>,
           );
-          final lockers = data['lockers'] as List<dynamic>? ?? [];
+          final lockersData = data['lockers'] as Map<Object?, Object?>? ?? {};
+          final lockers =
+              lockersData.values
+                  .map(
+                    (e) =>
+                        Map<String, dynamic>.from(e as Map<Object?, Object?>),
+                  )
+                  .toList();
           final availableCount =
               lockers.where((l) => l['reserved'] == false).length;
           return Column(

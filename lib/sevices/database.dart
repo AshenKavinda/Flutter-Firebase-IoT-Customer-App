@@ -41,12 +41,9 @@ class DatabaseService {
           data['deleted'] == false &&
           data['status'] == 'available' &&
           data['lockers'] != null) {
-        final lockersData = data['lockers'] as List<dynamic>;
-        for (var locker in lockersData) {
-          final lockerMap = locker as Map<Object?, Object?>;
-          if (lockerMap['id'] == lockerId) {
-            return child;
-          }
+        final lockersData = data['lockers'] as Map<Object?, Object?>;
+        if (lockersData.containsKey(lockerId)) {
+          return child;
         }
       }
     }
@@ -64,16 +61,14 @@ class DatabaseService {
           data['deleted'] == false &&
           data['status'] == 'available' &&
           data['lockers'] != null) {
-        final lockersData = data['lockers'] as List<dynamic>;
-        for (var i = 0; i < lockersData.length; i++) {
-          final lockerMap = lockersData[i] as Map<Object?, Object?>;
-          if (lockerMap['id'] == lockerId) {
-            return {
-              'unitSnapshot': child,
-              'locker': Map<String, dynamic>.from(lockerMap),
-              'lockerIndex': i,
-            };
-          }
+        final lockersData = data['lockers'] as Map<Object?, Object?>;
+        if (lockersData.containsKey(lockerId)) {
+          final lockerData = lockersData[lockerId] as Map<Object?, Object?>;
+          return {
+            'unitSnapshot': child,
+            'locker': Map<String, dynamic>.from(lockerData),
+            'lockerId': lockerId,
+          };
         }
       }
     }
@@ -85,17 +80,12 @@ class DatabaseService {
     final details = await getLockerDetailsById(lockerId);
     if (details == null) return false;
     final unitSnapshot = details['unitSnapshot'] as DataSnapshot;
-    final lockerIndex = details['lockerIndex'] as int;
-    final data = Map<String, dynamic>.from(
-      unitSnapshot.value as Map<Object?, Object?>,
-    );
-    final lockersData = data['lockers'] as List<dynamic>;
-    final lockers =
-        lockersData
-            .map((e) => Map<String, dynamic>.from(e as Map<Object?, Object?>))
-            .toList();
-    lockers[lockerIndex]['locked'] = false;
-    await _unitsRef.child(unitSnapshot.key!).update({'lockers': lockers});
+
+    await _unitsRef
+        .child(unitSnapshot.key!)
+        .child('lockers')
+        .child(lockerId)
+        .update({'locked': false});
     return true;
   }
 
@@ -104,17 +94,12 @@ class DatabaseService {
     final details = await getLockerDetailsById(lockerId);
     if (details == null) return false;
     final unitSnapshot = details['unitSnapshot'] as DataSnapshot;
-    final lockerIndex = details['lockerIndex'] as int;
-    final data = Map<String, dynamic>.from(
-      unitSnapshot.value as Map<Object?, Object?>,
-    );
-    final lockersData = data['lockers'] as List<dynamic>;
-    final lockers =
-        lockersData
-            .map((e) => Map<String, dynamic>.from(e as Map<Object?, Object?>))
-            .toList();
-    lockers[lockerIndex]['locked'] = locked;
-    await _unitsRef.child(unitSnapshot.key!).update({'lockers': lockers});
+
+    await _unitsRef
+        .child(unitSnapshot.key!)
+        .child('lockers')
+        .child(lockerId)
+        .update({'locked': locked});
     return true;
   }
 
@@ -123,17 +108,12 @@ class DatabaseService {
     final details = await getLockerDetailsById(lockerId);
     if (details == null) return false;
     final unitSnapshot = details['unitSnapshot'] as DataSnapshot;
-    final lockerIndex = details['lockerIndex'] as int;
-    final data = Map<String, dynamic>.from(
-      unitSnapshot.value as Map<Object?, Object?>,
-    );
-    final lockersData = data['lockers'] as List<dynamic>;
-    final lockers =
-        lockersData
-            .map((e) => Map<String, dynamic>.from(e as Map<Object?, Object?>))
-            .toList();
-    lockers[lockerIndex]['confirmation'] = confirmation;
-    await _unitsRef.child(unitSnapshot.key!).update({'lockers': lockers});
+
+    await _unitsRef
+        .child(unitSnapshot.key!)
+        .child('lockers')
+        .child(lockerId)
+        .update({'confirmation': confirmation});
     return true;
   }
 
@@ -161,17 +141,12 @@ class DatabaseService {
     final details = await getLockerDetailsById(lockerId);
     if (details == null) return false;
     final unitSnapshot = details['unitSnapshot'] as DataSnapshot;
-    final lockerIndex = details['lockerIndex'] as int;
-    final data = Map<String, dynamic>.from(
-      unitSnapshot.value as Map<Object?, Object?>,
-    );
-    final lockersData = data['lockers'] as List<dynamic>;
-    final lockers =
-        lockersData
-            .map((e) => Map<String, dynamic>.from(e as Map<Object?, Object?>))
-            .toList();
-    lockers[lockerIndex]['reserved'] = reserved;
-    await _unitsRef.child(unitSnapshot.key!).update({'lockers': lockers});
+
+    await _unitsRef
+        .child(unitSnapshot.key!)
+        .child('lockers')
+        .child(lockerId)
+        .update({'reserved': reserved});
     return true;
   }
 
