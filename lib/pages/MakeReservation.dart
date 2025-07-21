@@ -23,7 +23,7 @@ class _MakeReservationPageState extends State<MakeReservationPage> {
     // var result = await BarcodeScanner.scan();
     // setState(() { _lockerIdController.text = result.rawContent; });
     setState(() {
-      _lockerIdController.text = "6115475X"; // Placeholder for demo
+      _lockerIdController.text = "6gmuiwXb"; // Placeholder for demo
     });
   }
 
@@ -49,30 +49,44 @@ class _MakeReservationPageState extends State<MakeReservationPage> {
       final db = DatabaseService();
       final doc = await db.getUnitByLockerId(lockerId);
       if (doc != null) {
-        final data = doc.data() as Map<String, dynamic>;
-        final lockers = List<Map<String, dynamic>>.from(data['lockers']);
-        final locker = lockers.firstWhere(
-          (l) => l['id'] == lockerId,
-          orElse: () => {},
+        final data = Map<String, dynamic>.from(
+          doc.value as Map<Object?, Object?>,
         );
-        if (locker.isNotEmpty && locker['status'] == 'available') {
-          if (locker['reserved'] == true) {
-            setState(() {
-              _errorText = 'Locker is already reserved.';
-            });
-            Fluttertoast.showToast(
-              msg: 'Locker is already reserved.',
-              backgroundColor: Colors.red,
-              textColor: Colors.white,
+        final lockersData = data['lockers'] as List<dynamic>?;
+        if (lockersData != null) {
+          final lockers =
+              lockersData
+                  .map(
+                    (e) =>
+                        Map<String, dynamic>.from(e as Map<Object?, Object?>),
+                  )
+                  .toList();
+          final locker = lockers.firstWhere(
+            (l) => l['id'] == lockerId,
+            orElse: () => {},
+          );
+          if (locker.isNotEmpty &&
+              locker['status'] == 'available' &&
+              locker['reserved'] == false) {
+            if (locker['reserved'] == true) {
+              setState(() {
+                _errorText = 'Locker is already reserved or broken';
+              });
+              Fluttertoast.showToast(
+                msg: 'Locker is already reserved or broken',
+                backgroundColor: Colors.red,
+                textColor: Colors.white,
+              );
+              return;
+            }
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder:
+                    (context) => ConfirmReservationPage(lockerId: lockerId),
+              ),
             );
             return;
           }
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => ConfirmReservationPage(lockerId: lockerId),
-            ),
-          );
-          return;
         }
       }
       setState(() {
@@ -84,6 +98,7 @@ class _MakeReservationPageState extends State<MakeReservationPage> {
         textColor: Colors.white,
       );
     } catch (e) {
+      print('Error fetching locker: $e');
       setState(() {
         _errorText = 'Error: ${e.toString()}';
       });

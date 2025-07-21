@@ -1,8 +1,9 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class PaymentService {
-  final CollectionReference _paymentCollection = FirebaseFirestore.instance
-      .collection('payment');
+  final DatabaseReference _paymentRef = FirebaseDatabase.instance.ref(
+    'payment',
+  );
 
   Future<void> addPayment({
     required String reservationDocId,
@@ -11,12 +12,12 @@ class PaymentService {
     required String lokerId,
     required DateTime timestamp,
   }) async {
-    await _paymentCollection.add({
+    await _paymentRef.push().set({
       'reservationDocId': reservationDocId,
       'total': total,
       'userId': userId,
       'lokerId': lokerId,
-      'timestamp': timestamp,
+      'timestamp': timestamp.toIso8601String(),
     });
   }
 }

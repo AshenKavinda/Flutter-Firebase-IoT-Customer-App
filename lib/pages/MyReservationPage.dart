@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:customer_app/sevices/database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +16,7 @@ class _MyReservationPageState extends State<MyReservationPage> {
   final DatabaseService _databaseService = DatabaseService();
   final user = FirebaseAuth.instance.currentUser;
 
-  Future<List<QueryDocumentSnapshot>> _fetchReservations() async {
+  Future<List<DataSnapshot>> _fetchReservations() async {
     if (user == null) return [];
     print('Fetching reservations for user: ${user!.uid}');
     final reservations = await _databaseService.getActiveReservationsForUser(
@@ -35,7 +35,7 @@ class _MyReservationPageState extends State<MyReservationPage> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: FutureBuilder<List<QueryDocumentSnapshot>>(
+      body: FutureBuilder<List<DataSnapshot>>(
         future: _fetchReservations(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -55,13 +55,12 @@ class _MyReservationPageState extends State<MyReservationPage> {
           return ListView.builder(
             itemCount: reservations.length,
             itemBuilder: (context, index) {
-              final data = reservations[index].data() as Map<String, dynamic>;
+              final data = Map<String, dynamic>.from(
+                reservations[index].value as Map<Object?, Object?>,
+              );
               final lockerId = data['lockerID'] ?? '';
               final timestamp =
-                  (data['timestamp'] is Timestamp)
-                      ? (data['timestamp'] as Timestamp).toDate()
-                      : DateTime.tryParse(data['timestamp'].toString()) ??
-                          DateTime.now();
+                  DateTime.tryParse(data['timestamp'] ?? '') ?? DateTime.now();
               final now = DateTime.now();
               final duration = now.difference(timestamp);
               final billingHours =
@@ -106,7 +105,7 @@ class _MyReservationPageState extends State<MyReservationPage> {
                         MaterialPageRoute(
                           builder:
                               (_) => BillingPage(
-                                reservationDocId: reservations[index].id,
+                                reservationDocId: reservations[index].key!,
                                 userId: user!.uid,
                               ),
                         ),
