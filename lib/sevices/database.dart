@@ -65,11 +65,11 @@ class DatabaseService {
         if (lockersData.containsKey(lockerId)) {
           final lockerData = lockersData[lockerId] as Map<Object?, Object?>;
           final locker = Map<String, dynamic>.from(lockerData);
-          
+
           // Convert integer values to boolean for app compatibility
           locker['locked'] = (locker['locked'] == 1);
           locker['confirmation'] = (locker['confirmation'] == 1);
-          
+
           return {
             'unitSnapshot': child,
             'locker': locker,
