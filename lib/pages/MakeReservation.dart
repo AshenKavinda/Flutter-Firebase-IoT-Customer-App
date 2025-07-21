@@ -23,7 +23,7 @@ class _MakeReservationPageState extends State<MakeReservationPage> {
     // var result = await BarcodeScanner.scan();
     // setState(() { _lockerIdController.text = result.rawContent; });
     setState(() {
-      _lockerIdController.text = "lepSv9WU"; // Placeholder for demo
+      _lockerIdController.text = "4c364013"; // Placeholder for demo
     });
   }
 
