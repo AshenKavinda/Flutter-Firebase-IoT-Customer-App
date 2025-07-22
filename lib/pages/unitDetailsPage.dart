@@ -44,12 +44,15 @@ class UnitDetailsPage extends StatelessWidget {
           );
           final lockersData = data['lockers'] as Map<Object?, Object?>? ?? {};
           final lockers =
-              lockersData.values
-                  .map(
-                    (e) =>
-                        Map<String, dynamic>.from(e as Map<Object?, Object?>),
-                  )
-                  .toList();
+              lockersData.values.map((e) {
+                final locker = Map<String, dynamic>.from(
+                  e as Map<Object?, Object?>,
+                );
+                // Convert integer values to boolean for app compatibility
+                locker['locked'] = (locker['locked'] == 1);
+                locker['confirmation'] = (locker['confirmation'] == 1);
+                return locker;
+              }).toList();
           final availableCount =
               lockers.where((l) => l['reserved'] == false).length;
           return Column(

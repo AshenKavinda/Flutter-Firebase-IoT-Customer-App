@@ -64,9 +64,15 @@ class DatabaseService {
         final lockersData = data['lockers'] as Map<Object?, Object?>;
         if (lockersData.containsKey(lockerId)) {
           final lockerData = lockersData[lockerId] as Map<Object?, Object?>;
+          final locker = Map<String, dynamic>.from(lockerData);
+
+          // Convert integer values to boolean for app compatibility
+          locker['locked'] = (locker['locked'] == 1);
+          locker['confirmation'] = (locker['confirmation'] == 1);
+
           return {
             'unitSnapshot': child,
-            'locker': Map<String, dynamic>.from(lockerData),
+            'locker': locker,
             'lockerId': lockerId,
           };
         }
@@ -85,7 +91,7 @@ class DatabaseService {
         .child(unitSnapshot.key!)
         .child('lockers')
         .child(lockerId)
-        .update({'locked': false});
+        .update({'locked': 0});
     return true;
   }
 
@@ -99,7 +105,7 @@ class DatabaseService {
         .child(unitSnapshot.key!)
         .child('lockers')
         .child(lockerId)
-        .update({'locked': locked});
+        .update({'locked': locked ? 1 : 0});
     return true;
   }
 
@@ -113,7 +119,7 @@ class DatabaseService {
         .child(unitSnapshot.key!)
         .child('lockers')
         .child(lockerId)
-        .update({'confirmation': confirmation});
+        .update({'confirmation': confirmation ? 1 : 0});
     return true;
   }
 

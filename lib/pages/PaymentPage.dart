@@ -77,7 +77,7 @@ class _PaymentPageState extends material.State<PaymentPage> {
       // 2. Start waiting for confirmation to become true
       bool confirmed = false;
       int attempts = 0;
-      while (!confirmed && attempts < 350) {
+      while (!confirmed && attempts < 1500) {
         // wait up to ~30 seconds
         await Future.delayed(const Duration(seconds: 1));
         final lockerStatus = await db.getLockerStatusById(widget.lokerId);
