@@ -92,7 +92,7 @@ class _ConfirmReservationPageState extends State<ConfirmReservationPage> {
   Future<void> _pollForConfirmation() async {
     // Poll confirmation field
     bool confirmed = false;
-    for (int i = 0; i < 40; i++) {
+    for (int i = 0; i < 400; i++) {
       // Poll up to 20 seconds
       final details = await DatabaseService().getLockerStatusById(
         widget.lockerId,
