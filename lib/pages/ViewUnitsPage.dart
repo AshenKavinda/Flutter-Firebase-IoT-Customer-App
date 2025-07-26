@@ -177,7 +177,7 @@ class _ViewUnitsPageState extends State<ViewUnitsPage> {
                     ),
                   );
                 },
-                child: Text('About Unit'),
+                child: Text('Make Booking'),
               ),
             ),
           // My Location FAB (bottom right)

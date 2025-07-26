@@ -9,11 +9,13 @@ import 'package:customer_app/pages/HomePage.dart';
 class PaymentPage extends material.StatefulWidget {
   final int total;
   final String reservationDocId;
+  final String? unitId;
   final String lokerId;
   const PaymentPage({
     material.Key? key,
     required this.total,
     required this.reservationDocId,
+    this.unitId,
     required this.lokerId,
   }) : super(key: key);
 
@@ -44,7 +46,16 @@ class _PaymentPageState extends material.State<PaymentPage> {
           .child(widget.reservationDocId)
           .update({'active': false});
       // Set unit locker reserved to false
-      await db.setLockerReserved(widget.lokerId, false);
+      if (widget.unitId != null) {
+        await db.setLockerReservedByUnitAndLockerId(
+          widget.unitId!,
+          widget.lokerId,
+          false,
+        );
+      } else {
+        // Fallback for old reservations without unitId
+        await db.setLockerReserved(widget.lokerId, false);
+      }
       // Add payment record
       final paymentService = PaymentService();
       await paymentService.addPayment(
@@ -73,33 +84,42 @@ class _PaymentPageState extends material.State<PaymentPage> {
       );
       // --- Locker confirmation/locking logic (after dialog) ---
       // 1. Set locked to false
-      await db.setLockerLocked(widget.lokerId, false);
-      // 2. Start waiting for confirmation to become true
-      bool confirmed = false;
-      int attempts = 0;
-      while (!confirmed && attempts < 1500) {
-        // wait up to ~30 seconds
-        await Future.delayed(const Duration(seconds: 1));
-        final lockerStatus = await db.getLockerStatusById(widget.lokerId);
-        if (lockerStatus != null && lockerStatus['locker'] != null) {
-          if (lockerStatus['locker']['confirmation'] == true) {
-            confirmed = true;
-            break;
-          }
-        }
-        attempts++;
+      if (widget.unitId != null) {
+        await db.setLockerLockedByUnitAndLockerId(
+          widget.unitId!,
+          widget.lokerId,
+          false,
+        );
+      } else {
+        // Fallback for old reservations without unitId
+        await db.setLockerLocked(widget.lokerId, false);
       }
-      confirmed = true;
-      if (confirmed) {
-        // 3. Set locked to true and reset confirmation to false
-        await db.setLockerLocked(widget.lokerId, true);
-        await db.setLockerConfirmation(widget.lokerId, false);
-      }
+
+      // Show thank you message after unlocking
+      if (!mounted) return;
+      await material.showDialog(
+        context: context,
+        builder:
+            (context) => material.AlertDialog(
+              title: const material.Text('Thank You!'),
+              content: const material.Text(
+                'Your locker has been unlocked. Thank you for using our service!',
+              ),
+              actions: [
+                material.TextButton(
+                  onPressed: () {
+                    material.Navigator.of(context).pop();
+                  },
+                  child: const material.Text('OK'),
+                ),
+              ],
+            ),
+      );
       // --- End Locker confirmation/locking logic ---
-      // Redirect to HomePage with reservation tab selected (index 2)
+      // Redirect to HomePage with reservation tab selected (index 1)
       material.Navigator.of(context).pushAndRemoveUntil(
         material.MaterialPageRoute(
-          builder: (context) => HomePage(initialTab: 2),
+          builder: (context) => HomePage(initialTab: 1),
         ),
         (route) => false,
       );

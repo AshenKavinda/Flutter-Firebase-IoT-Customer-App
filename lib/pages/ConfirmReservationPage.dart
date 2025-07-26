@@ -4,9 +4,13 @@ import 'package:customer_app/utils/theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ConfirmReservationPage extends StatefulWidget {
+  final String unitId;
   final String lockerId;
-  const ConfirmReservationPage({Key? key, required this.lockerId})
-    : super(key: key);
+  const ConfirmReservationPage({
+    Key? key,
+    required this.unitId,
+    required this.lockerId,
+  }) : super(key: key);
 
   @override
   State<ConfirmReservationPage> createState() => _ConfirmReservationPageState();
@@ -27,7 +31,8 @@ class _ConfirmReservationPageState extends State<ConfirmReservationPage> {
 
   Future<void> _fetchLockerDetails() async {
     try {
-      final details = await DatabaseService().getLockerDetailsById(
+      final details = await DatabaseService().getLockerDetailsByUnitAndLockerId(
+        widget.unitId,
         widget.lockerId,
       );
       if (details != null) {
@@ -56,13 +61,15 @@ class _ConfirmReservationPageState extends State<ConfirmReservationPage> {
       _message = null;
     });
     // Step 1: Unlock locker
-    final success = await DatabaseService().setLockerLocked(
+    final success = await DatabaseService().setLockerLockedByUnitAndLockerId(
+      widget.unitId,
       widget.lockerId,
       false,
     );
     if (success) {
       // Confirm it's unlocked
-      final details = await DatabaseService().getLockerStatusById(
+      final details = await DatabaseService().getLockerStatusByUnitAndLockerId(
+        widget.unitId,
         widget.lockerId,
       );
       final locker =
@@ -73,6 +80,31 @@ class _ConfirmReservationPageState extends State<ConfirmReservationPage> {
           _message =
               'Locker is now OPEN. Please place your items inside, close the door, and press the CONFIRM button on the locker.';
         });
+
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          final reservationDocId = await DatabaseService().addReservation(
+            userId: user.uid,
+            unitId: widget.unitId,
+            lockerId: widget.lockerId,
+            timestamp: DateTime.now(),
+          );
+
+          if (reservationDocId != null) {
+            // Set the reservation document ID in the locker
+            await DatabaseService().setLockerReservedDocId(
+              widget.unitId,
+              widget.lockerId,
+              reservationDocId,
+            );
+          }
+
+          await DatabaseService().setLockerReservedByUnitAndLockerId(
+            widget.unitId,
+            widget.lockerId,
+            true,
+          );
+        }
         // Start polling for confirmation
         _pollForConfirmation();
       } else {
@@ -94,7 +126,8 @@ class _ConfirmReservationPageState extends State<ConfirmReservationPage> {
     bool confirmed = false;
     for (int i = 0; i < 400; i++) {
       // Poll up to 20 seconds
-      final details = await DatabaseService().getLockerStatusById(
+      final details = await DatabaseService().getLockerStatusByUnitAndLockerId(
+        widget.unitId,
         widget.lockerId,
       );
       final locker =
@@ -107,7 +140,8 @@ class _ConfirmReservationPageState extends State<ConfirmReservationPage> {
     }
     if (confirmed) {
       // Lock the locker again
-      final locked = await DatabaseService().setLockerLocked(
+      final locked = await DatabaseService().setLockerLockedByUnitAndLockerId(
+        widget.unitId,
         widget.lockerId,
         true,
       );
@@ -117,13 +151,22 @@ class _ConfirmReservationPageState extends State<ConfirmReservationPage> {
         if (user != null) {
           await DatabaseService().addReservation(
             userId: user.uid,
+            unitId: widget.unitId,
             lockerId: widget.lockerId,
             timestamp: DateTime.now(),
           );
-          await DatabaseService().setLockerReserved(widget.lockerId, true);
+          await DatabaseService().setLockerReservedByUnitAndLockerId(
+            widget.unitId,
+            widget.lockerId,
+            true,
+          );
         }
         // Reset confirmation field to false
-        await DatabaseService().setLockerConfirmation(widget.lockerId, false);
+        await DatabaseService().setLockerConfirmationByUnitAndLockerId(
+          widget.unitId,
+          widget.lockerId,
+          false,
+        );
         setState(() {
           _processComplete = true;
           _isProcessing = false;

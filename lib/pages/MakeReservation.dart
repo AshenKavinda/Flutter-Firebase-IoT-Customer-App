@@ -3,6 +3,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:customer_app/sevices/database.dart';
 import 'package:customer_app/utils/theme.dart';
 import 'package:customer_app/pages/ConfirmReservationPage.dart'; // Import the ConfirmReservationPage
+import 'package:customer_app/pages/Profile.dart'; // Import the ProfilePage
+import 'package:firebase_auth/firebase_auth.dart';
 
 // import 'package:qr_code_scanner/qr_code_scanner.dart'; // Uncomment if using a QR package
 // import 'package:barcode_scan2/barcode_scan2.dart'; // Alternative QR package
@@ -16,6 +18,63 @@ class _MakeReservationPageState extends State<MakeReservationPage> {
   final TextEditingController _lockerIdController = TextEditingController();
   bool _isLoading = false;
   String? _errorText;
+
+  Future<bool> _checkUserPin() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+
+    try {
+      final db = DatabaseService();
+      final hasPin = await db.userHasPin(user.uid);
+      return hasPin;
+    } catch (e) {
+      print('Error checking PIN: $e');
+      return false;
+    }
+  }
+
+  void _showPinRequiredDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.lock, color: AppColors.navyBlue),
+              const SizedBox(width: 8),
+              const Text('PIN Required'),
+            ],
+          ),
+          content: const Text(
+            'You need to set up a 4-digit PIN before making a reservation. '
+            'Please go to your profile page to create one.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.navyBlue,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const ProfilePage()),
+                );
+              },
+              child: const Text('Go to Profile'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Future<void> _scanQRCode() async {
     // TODO: Implement QR code scanning logic
@@ -32,6 +91,17 @@ class _MakeReservationPageState extends State<MakeReservationPage> {
       _isLoading = true;
       _errorText = null;
     });
+
+    // Check if user has PIN first
+    final hasPin = await _checkUserPin();
+    if (!hasPin) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showPinRequiredDialog();
+      return;
+    }
+
     final lockerId = _lockerIdController.text.trim();
     if (lockerId.isEmpty) {
       setState(() {
@@ -47,6 +117,8 @@ class _MakeReservationPageState extends State<MakeReservationPage> {
     }
     try {
       final db = DatabaseService();
+      // Note: Using deprecated method since this page searches by locker ID only
+      // Consider redesigning this flow to first select unit, then locker
       final doc = await db.getUnitByLockerId(lockerId);
       if (doc != null) {
         final data = Map<String, dynamic>.from(
@@ -69,10 +141,15 @@ class _MakeReservationPageState extends State<MakeReservationPage> {
               );
               return;
             }
+            // Get the unit ID from the document
+            final unitId = doc.key!;
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder:
-                    (context) => ConfirmReservationPage(lockerId: lockerId),
+                    (context) => ConfirmReservationPage(
+                      unitId: unitId,
+                      lockerId: lockerId,
+                    ),
               ),
             );
             return;
@@ -117,6 +194,29 @@ class _MakeReservationPageState extends State<MakeReservationPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Info card about PIN requirement
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16.0),
+              margin: const EdgeInsets.only(bottom: 24.0),
+              decoration: BoxDecoration(
+                color: AppColors.tealBlue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.tealBlue.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.tealBlue),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'A PIN is required to make reservations. Please ensure you have set up your PIN in the Profile page.',
+                      style: TextStyle(color: AppColors.tealBlue, fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             TextField(
               controller: _lockerIdController,
               decoration: InputDecoration(

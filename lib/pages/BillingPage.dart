@@ -58,13 +58,19 @@ class _BillingPageState extends State<BillingPage> {
       doc.value as Map<Object?, Object?>,
     );
     lockerId = reservationData!["lockerID"];
+    final unitId = reservationData!["unitID"]; // Get unit ID from reservation
     // Handle timestamp string
     final ts = reservationData!["timestamp"];
     reservedDate = DateTime.tryParse(ts ?? '');
     reservedTime =
         reservedDate != null ? DateFormat('hh:mm a').format(reservedDate!) : '';
-    // Get locker details
-    final lockerDetails = await db.getLockerDetailsById(lockerId);
+    // Get locker details using both unit ID and locker ID
+    final lockerDetails =
+        unitId != null
+            ? await db.getLockerDetailsByUnitAndLockerId(unitId, lockerId)
+            : await db.getLockerDetailsById(
+              lockerId,
+            ); // Fallback for old reservations
     if (lockerDetails != null) {
       lockerData = lockerDetails['locker'];
       pricePerHour = lockerData?["price"] ?? 0;
@@ -176,6 +182,7 @@ class _BillingPageState extends State<BillingPage> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     onPressed: () {
+                      final unitId = reservationData!["unitID"];
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -183,6 +190,7 @@ class _BillingPageState extends State<BillingPage> {
                               (context) => PaymentPage(
                                 total: total,
                                 reservationDocId: widget.reservationDocId,
+                                unitId: unitId,
                                 lokerId: lockerId,
                               ),
                         ),
