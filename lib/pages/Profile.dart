@@ -129,6 +129,7 @@ class _ProfilePageState extends State<ProfilePage> {
         centerTitle: true,
         elevation: 0,
         backgroundColor: AppColors.navyBlue,
+        foregroundColor: Colors.white,
       ),
       body:
           _isLoading

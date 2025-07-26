@@ -116,10 +116,10 @@ class _PaymentPageState extends material.State<PaymentPage> {
             ),
       );
       // --- End Locker confirmation/locking logic ---
-      // Redirect to HomePage with reservation tab selected (index 2)
+      // Redirect to HomePage with reservation tab selected (index 1)
       material.Navigator.of(context).pushAndRemoveUntil(
         material.MaterialPageRoute(
-          builder: (context) => HomePage(initialTab: 2),
+          builder: (context) => HomePage(initialTab: 1),
         ),
         (route) => false,
       );
