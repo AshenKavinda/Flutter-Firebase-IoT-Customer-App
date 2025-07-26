@@ -21,6 +21,10 @@ class CustomNavBar extends StatelessWidget {
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.location_pin), label: 'Home'),
         BottomNavigationBarItem(
+          icon: Icon(Icons.qr_code_scanner),
+          label: 'Make',
+        ),
+        BottomNavigationBarItem(
           icon: Icon(Icons.book_online),
           label: 'Reservations',
         ),

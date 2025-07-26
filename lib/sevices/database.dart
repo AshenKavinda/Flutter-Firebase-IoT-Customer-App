@@ -303,6 +303,58 @@ class DatabaseService {
     }
   }
 
+  Future<bool> setLockerReservedDocId(
+    String unitId,
+    String lockerId,
+    String reservationDocId,
+  ) async {
+    try {
+      final snapshot = await _unitsRef.child(unitId).get();
+      if (!snapshot.exists) return false;
+
+      final data = snapshot.value as Map<Object?, Object?>?;
+      if (data == null || data['lockers'] == null) return false;
+
+      final lockersRaw = data['lockers'];
+
+      if (lockersRaw is Map) {
+        // If lockers is stored as a Map, use direct path update
+        await _unitsRef.child(unitId).child('lockers').child(lockerId).update({
+          'reservedDocID': reservationDocId,
+        });
+        return true;
+      } else if (lockersRaw is List) {
+        // If lockers is stored as a List, update the entire array
+        final lockersList = List<Object?>.from(lockersRaw as List<Object?>);
+        bool found = false;
+
+        for (int i = 0; i < lockersList.length; i++) {
+          final item = lockersList[i];
+          if (item != null && item is Map) {
+            final lockerMap = Map<String, dynamic>.from(
+              item as Map<Object?, Object?>,
+            );
+            if (lockerMap['id'].toString() == lockerId) {
+              lockerMap['reservedDocID'] = reservationDocId;
+              lockersList[i] = lockerMap;
+              found = true;
+              break;
+            }
+          }
+        }
+
+        if (found) {
+          await _unitsRef.child(unitId).update({'lockers': lockersList});
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      print('Error updating locker reserved doc ID: $e');
+      return false;
+    }
+  }
+
   /// Set the 'confirmation' field of a locker to a given value - deprecated
   @deprecated
   Future<bool> setLockerConfirmation(String lockerId, bool confirmation) async {
@@ -372,23 +424,24 @@ class DatabaseService {
   }
 
   /// Add a reservation record to the reservations collection
-  Future<bool> addReservation({
+  Future<String?> addReservation({
     required String userId,
     required String unitId,
     required String lockerId,
     required DateTime timestamp,
   }) async {
     try {
-      await _reservationsRef.push().set({
+      final reservationRef = _reservationsRef.push();
+      await reservationRef.set({
         'timestamp': timestamp.toIso8601String(),
         'userID': userId,
         'unitID': unitId,
         'lockerID': lockerId,
         'active': true,
       });
-      return true;
+      return reservationRef.key; // Return the document ID
     } catch (e) {
-      return false;
+      return null;
     }
   }
 
@@ -456,59 +509,6 @@ class DatabaseService {
       return false;
     } catch (e) {
       print('Error updating locker reserved status: $e');
-      return false;
-    }
-  }
-
-  /// Set the 'reservedDocID' field of a locker
-  Future<bool> setLockerReservedDocId(
-    String unitId,
-    String lockerId,
-    String docId,
-  ) async {
-    try {
-      final snapshot = await _unitsRef.child(unitId).get();
-      if (!snapshot.exists) return false;
-
-      final data = snapshot.value as Map<Object?, Object?>?;
-      if (data == null || data['lockers'] == null) return false;
-
-      final lockersRaw = data['lockers'];
-
-      if (lockersRaw is Map) {
-        // If lockers is stored as a Map, use direct path update
-        await _unitsRef.child(unitId).child('lockers').child(lockerId).update({
-          'reservedDocID': docId,
-        });
-        return true;
-      } else if (lockersRaw is List) {
-        // If lockers is stored as a List, update the entire array
-        final lockersList = List<Object?>.from(lockersRaw as List<Object?>);
-        bool found = false;
-
-        for (int i = 0; i < lockersList.length; i++) {
-          final item = lockersList[i];
-          if (item != null && item is Map) {
-            final lockerMap = Map<String, dynamic>.from(
-              item as Map<Object?, Object?>,
-            );
-            if (lockerMap['id'].toString() == lockerId) {
-              lockerMap['reservedDocID'] = docId;
-              lockersList[i] = lockerMap;
-              found = true;
-              break;
-            }
-          }
-        }
-
-        if (found) {
-          await _unitsRef.child(unitId).update({'lockers': lockersList});
-          return true;
-        }
-      }
-      return false;
-    } catch (e) {
-      print('Error updating locker reservedDocID: $e');
       return false;
     }
   }

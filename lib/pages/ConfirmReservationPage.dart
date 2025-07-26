@@ -83,12 +83,22 @@ class _ConfirmReservationPageState extends State<ConfirmReservationPage> {
 
         final user = FirebaseAuth.instance.currentUser;
         if (user != null) {
-          await DatabaseService().addReservation(
+          final reservationDocId = await DatabaseService().addReservation(
             userId: user.uid,
             unitId: widget.unitId,
             lockerId: widget.lockerId,
             timestamp: DateTime.now(),
           );
+
+          if (reservationDocId != null) {
+            // Set the reservation document ID in the locker
+            await DatabaseService().setLockerReservedDocId(
+              widget.unitId,
+              widget.lockerId,
+              reservationDocId,
+            );
+          }
+
           await DatabaseService().setLockerReservedByUnitAndLockerId(
             widget.unitId,
             widget.lockerId,
@@ -96,7 +106,7 @@ class _ConfirmReservationPageState extends State<ConfirmReservationPage> {
           );
         }
         // Start polling for confirmation
-        //_pollForConfirmation();
+        _pollForConfirmation();
       } else {
         setState(() {
           _isProcessing = false;
