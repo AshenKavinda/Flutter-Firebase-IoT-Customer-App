@@ -5,6 +5,7 @@ class DatabaseService {
   final DatabaseReference _reservationsRef = FirebaseDatabase.instance.ref(
     'reservations',
   );
+  final DatabaseReference _usersRef = FirebaseDatabase.instance.ref('users');
 
   /// Get all unit documents (for marker loading)
   Future<List<DataSnapshot>> getAllUnitDocs() async {
@@ -188,5 +189,27 @@ class DatabaseService {
     });
 
     return reservations;
+  }
+
+  /// Get user PIN by user ID
+  Future<String?> getUserPin(String userId) async {
+    final snapshot = await _usersRef.child(userId).child('pin').get();
+    return snapshot.exists ? snapshot.value as String? : null;
+  }
+
+  /// Set or update user PIN
+  Future<bool> setUserPin(String userId, String pin) async {
+    try {
+      await _usersRef.child(userId).update({'pin': pin});
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Check if user has a PIN
+  Future<bool> userHasPin(String userId) async {
+    final pin = await getUserPin(userId);
+    return pin != null && pin.isNotEmpty;
   }
 }
