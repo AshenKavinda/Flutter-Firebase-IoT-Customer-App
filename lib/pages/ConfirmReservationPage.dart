@@ -73,8 +73,18 @@ class _ConfirmReservationPageState extends State<ConfirmReservationPage> {
           _message =
               'Locker is now OPEN. Please place your items inside, close the door, and press the CONFIRM button on the locker.';
         });
+
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          await DatabaseService().addReservation(
+            userId: user.uid,
+            lockerId: widget.lockerId,
+            timestamp: DateTime.now(),
+          );
+          await DatabaseService().setLockerReserved(widget.lockerId, true);
+        }
         // Start polling for confirmation
-        _pollForConfirmation();
+        //_pollForConfirmation();
       } else {
         setState(() {
           _isProcessing = false;

@@ -74,27 +74,49 @@ class _PaymentPageState extends material.State<PaymentPage> {
       // --- Locker confirmation/locking logic (after dialog) ---
       // 1. Set locked to false
       await db.setLockerLocked(widget.lokerId, false);
+
+      // Show thank you message after unlocking
+      if (!mounted) return;
+      await material.showDialog(
+        context: context,
+        builder:
+            (context) => material.AlertDialog(
+              title: const material.Text('Thank You!'),
+              content: const material.Text(
+                'Your locker has been unlocked. Thank you for using our service!',
+              ),
+              actions: [
+                material.TextButton(
+                  onPressed: () {
+                    material.Navigator.of(context).pop();
+                  },
+                  child: const material.Text('OK'),
+                ),
+              ],
+            ),
+      );
+
       // 2. Start waiting for confirmation to become true
-      bool confirmed = false;
-      int attempts = 0;
-      while (!confirmed && attempts < 1500) {
-        // wait up to ~30 seconds
-        await Future.delayed(const Duration(seconds: 1));
-        final lockerStatus = await db.getLockerStatusById(widget.lokerId);
-        if (lockerStatus != null && lockerStatus['locker'] != null) {
-          if (lockerStatus['locker']['confirmation'] == true) {
-            confirmed = true;
-            break;
-          }
-        }
-        attempts++;
-      }
-      confirmed = true;
-      if (confirmed) {
-        // 3. Set locked to true and reset confirmation to false
-        await db.setLockerLocked(widget.lokerId, true);
-        await db.setLockerConfirmation(widget.lokerId, false);
-      }
+      // bool confirmed = false;
+      // int attempts = 0;
+      // while (!confirmed && attempts < 1500) {
+      //   // wait up to ~30 seconds
+      //   await Future.delayed(const Duration(seconds: 1));
+      //   final lockerStatus = await db.getLockerStatusById(widget.lokerId);
+      //   if (lockerStatus != null && lockerStatus['locker'] != null) {
+      //     if (lockerStatus['locker']['confirmation'] == true) {
+      //       confirmed = true;
+      //       break;
+      //     }
+      //   }
+      //   attempts++;
+      // }
+      // confirmed = true;
+      // if (confirmed) {
+      //   // 3. Set locked to true and reset confirmation to false
+      //   await db.setLockerLocked(widget.lokerId, true);
+      //   await db.setLockerConfirmation(widget.lokerId, false);
+      // }
       // --- End Locker confirmation/locking logic ---
       // Redirect to HomePage with reservation tab selected (index 2)
       material.Navigator.of(context).pushAndRemoveUntil(
