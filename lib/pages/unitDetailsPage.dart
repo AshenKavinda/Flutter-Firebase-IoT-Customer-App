@@ -42,17 +42,41 @@ class UnitDetailsPage extends StatelessWidget {
           final data = Map<String, dynamic>.from(
             snapshot.data!.value as Map<Object?, Object?>,
           );
-          final lockersData = data['lockers'] as Map<Object?, Object?>? ?? {};
-          final lockers =
-              lockersData.values.map((e) {
-                final locker = Map<String, dynamic>.from(
-                  e as Map<Object?, Object?>,
-                );
-                // Convert integer values to boolean for app compatibility
-                locker['locked'] = (locker['locked'] == 1);
-                locker['confirmation'] = (locker['confirmation'] == 1);
-                return locker;
-              }).toList();
+
+          // Handle both Map and List structures for lockers
+          final lockersRaw = data['lockers'];
+          List<Map<String, dynamic>> lockers = [];
+
+          if (lockersRaw != null) {
+            if (lockersRaw is Map) {
+              // If lockers is a Map (like {"1": {...}, "2": {...}})
+              final lockersData = Map<String, dynamic>.from(lockersRaw);
+              lockers =
+                  lockersData.values.where((e) => e != null && e is Map).map((
+                    e,
+                  ) {
+                    final locker = Map<String, dynamic>.from(
+                      e as Map<Object?, Object?>,
+                    );
+                    // Convert integer values to boolean for app compatibility
+                    locker['locked'] = (locker['locked'] == 1);
+                    locker['confirmation'] = (locker['confirmation'] == 1);
+                    return locker;
+                  }).toList();
+            } else if (lockersRaw is List) {
+              // If lockers is a List
+              lockers =
+                  lockersRaw.where((e) => e != null && e is Map).map((e) {
+                    final locker = Map<String, dynamic>.from(
+                      e as Map<Object?, Object?>,
+                    );
+                    // Convert integer values to boolean for app compatibility
+                    locker['locked'] = (locker['locked'] == 1);
+                    locker['confirmation'] = (locker['confirmation'] == 1);
+                    return locker;
+                  }).toList();
+            }
+          }
           final availableCount =
               lockers.where((l) => l['reserved'] == false).length;
           return Column(
