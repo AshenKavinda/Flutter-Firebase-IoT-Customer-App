@@ -97,65 +97,35 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
       }
 
       final db = DatabaseService();
-      final doc = await db.getUnitByLockerId(lockerId);
-      if (doc != null) {
-        final data = Map<String, dynamic>.from(
-          doc.value as Map<Object?, Object?>,
-        );
+      // Use the database service method that handles the data structure complexity
+      final lockerDetails = await db.getLockerDetailsByUnitAndLockerId(
+        widget.unitId,
+        lockerId,
+      );
 
-        // Handle both Map and List structures for lockers
-        final lockersRaw = data['lockers'];
-        Map<String, dynamic>? targetLocker;
+      if (lockerDetails != null) {
+        final locker = lockerDetails['locker'] as Map<String, dynamic>;
 
-        if (lockersRaw != null) {
-          if (lockersRaw is Map) {
-            final lockersData = Map<String, dynamic>.from(lockersRaw);
-            if (lockersData.containsKey(lockerId)) {
-              targetLocker = Map<String, dynamic>.from(
-                lockersData[lockerId] as Map<Object?, Object?>,
-              );
-            }
-          } else if (lockersRaw is List) {
-            for (var item in lockersRaw) {
-              if (item != null && item is Map) {
-                final locker = Map<String, dynamic>.from(
-                  item as Map<Object?, Object?>,
-                );
-                if (locker['id'] == lockerId) {
-                  targetLocker = locker;
-                  break;
-                }
-              }
-            }
-          }
-        }
-
-        if (targetLocker != null) {
-          if (targetLocker['status'] == 'available' &&
-              targetLocker['reserved'] == false) {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder:
-                    (context) => ConfirmReservationPage(lockerId: lockerId),
-              ),
-            );
-          } else {
-            Fluttertoast.showToast(
-              msg: 'Locker is already reserved or not available.',
-              backgroundColor: Colors.red,
-              textColor: Colors.white,
-            );
-          }
+        if (locker['status'] == 'available' && locker['reserved'] == false) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder:
+                  (context) => ConfirmReservationPage(
+                    unitId: widget.unitId,
+                    lockerId: lockerId,
+                  ),
+            ),
+          );
         } else {
           Fluttertoast.showToast(
-            msg: 'Locker not found.',
+            msg: 'Locker is already reserved or not available.',
             backgroundColor: Colors.red,
             textColor: Colors.white,
           );
         }
       } else {
         Fluttertoast.showToast(
-          msg: 'Unit not found.',
+          msg: 'Locker not found in this unit.',
           backgroundColor: Colors.red,
           textColor: Colors.white,
         );

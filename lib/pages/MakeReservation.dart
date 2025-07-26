@@ -117,6 +117,8 @@ class _MakeReservationPageState extends State<MakeReservationPage> {
     }
     try {
       final db = DatabaseService();
+      // Note: Using deprecated method since this page searches by locker ID only
+      // Consider redesigning this flow to first select unit, then locker
       final doc = await db.getUnitByLockerId(lockerId);
       if (doc != null) {
         final data = Map<String, dynamic>.from(
@@ -139,10 +141,15 @@ class _MakeReservationPageState extends State<MakeReservationPage> {
               );
               return;
             }
+            // Get the unit ID from the document
+            final unitId = doc.key!;
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder:
-                    (context) => ConfirmReservationPage(lockerId: lockerId),
+                    (context) => ConfirmReservationPage(
+                      unitId: unitId,
+                      lockerId: lockerId,
+                    ),
               ),
             );
             return;

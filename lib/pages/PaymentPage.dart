@@ -9,11 +9,13 @@ import 'package:customer_app/pages/HomePage.dart';
 class PaymentPage extends material.StatefulWidget {
   final int total;
   final String reservationDocId;
+  final String? unitId;
   final String lokerId;
   const PaymentPage({
     material.Key? key,
     required this.total,
     required this.reservationDocId,
+    this.unitId,
     required this.lokerId,
   }) : super(key: key);
 
@@ -44,7 +46,16 @@ class _PaymentPageState extends material.State<PaymentPage> {
           .child(widget.reservationDocId)
           .update({'active': false});
       // Set unit locker reserved to false
-      await db.setLockerReserved(widget.lokerId, false);
+      if (widget.unitId != null) {
+        await db.setLockerReservedByUnitAndLockerId(
+          widget.unitId!,
+          widget.lokerId,
+          false,
+        );
+      } else {
+        // Fallback for old reservations without unitId
+        await db.setLockerReserved(widget.lokerId, false);
+      }
       // Add payment record
       final paymentService = PaymentService();
       await paymentService.addPayment(
@@ -73,7 +84,16 @@ class _PaymentPageState extends material.State<PaymentPage> {
       );
       // --- Locker confirmation/locking logic (after dialog) ---
       // 1. Set locked to false
-      await db.setLockerLocked(widget.lokerId, false);
+      if (widget.unitId != null) {
+        await db.setLockerLockedByUnitAndLockerId(
+          widget.unitId!,
+          widget.lokerId,
+          false,
+        );
+      } else {
+        // Fallback for old reservations without unitId
+        await db.setLockerLocked(widget.lokerId, false);
+      }
 
       // Show thank you message after unlocking
       if (!mounted) return;

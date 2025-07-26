@@ -30,9 +30,11 @@ class DatabaseService {
     return snapshot.exists ? snapshot : null;
   }
 
-  /// Get the unit document that contains a locker with the given lockerId
+  /// Get the unit document that contains a locker with the given lockerId (deprecated)
+  @deprecated
   Future<DataSnapshot?> getUnitByLockerId(String lockerId) async {
-    // Realtime Database: fetch all available units and filter in Dart
+    // This method is deprecated since locker IDs are not unique across units
+    // Use getUnitByIdAndLockerId instead
     final snapshot = await _unitsRef.get();
     if (!snapshot.exists) return null;
 
@@ -42,17 +44,79 @@ class DatabaseService {
           data['deleted'] == false &&
           data['status'] == 'available' &&
           data['lockers'] != null) {
-        final lockersData = data['lockers'] as Map<Object?, Object?>;
-        if (lockersData.containsKey(lockerId)) {
-          return child;
+        final lockersRaw = data['lockers'];
+
+        // Handle both Map and List structures for lockers
+        if (lockersRaw is Map) {
+          final lockersData = lockersRaw as Map<Object?, Object?>;
+          if (lockersData.containsKey(lockerId)) {
+            return child;
+          }
+        } else if (lockersRaw is List) {
+          final lockersList = lockersRaw as List<Object?>;
+          for (var item in lockersList) {
+            if (item != null && item is Map) {
+              final lockerMap = item as Map<Object?, Object?>;
+              final locker = Map<String, dynamic>.from(lockerMap);
+
+              // Check if this is the locker we're looking for
+              if (locker['id'].toString() == lockerId) {
+                return child;
+              }
+            }
+          }
         }
       }
     }
     return null;
   }
 
-  /// Get locker details (unit snapshot, locker map, locker index) by lockerId
+  /// Get the unit document by unit ID and verify locker exists
+  Future<DataSnapshot?> getUnitByIdAndLockerId(
+    String unitId,
+    String lockerId,
+  ) async {
+    final snapshot = await _unitsRef.child(unitId).get();
+    if (!snapshot.exists) return null;
+
+    final data = snapshot.value as Map<Object?, Object?>?;
+    if (data != null &&
+        data['deleted'] == false &&
+        data['status'] == 'available' &&
+        data['lockers'] != null) {
+      final lockersRaw = data['lockers'];
+
+      // Handle both Map and List structures for lockers
+      if (lockersRaw is Map) {
+        // If lockers is stored as a Map (like {"1": {...}, "2": {...}})
+        final lockersData = lockersRaw as Map<Object?, Object?>;
+        if (lockersData.containsKey(lockerId)) {
+          return snapshot;
+        }
+      } else if (lockersRaw is List) {
+        // If lockers is stored as a List
+        final lockersList = lockersRaw as List<Object?>;
+        for (var item in lockersList) {
+          if (item != null && item is Map) {
+            final lockerMap = item as Map<Object?, Object?>;
+            final locker = Map<String, dynamic>.from(lockerMap);
+
+            // Check if this is the locker we're looking for
+            if (locker['id'].toString() == lockerId) {
+              return snapshot;
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Get locker details (unit snapshot, locker map, locker index) by lockerId (deprecated)
+  @deprecated
   Future<Map<String, dynamic>?> getLockerDetailsById(String lockerId) async {
+    // This method is deprecated since locker IDs are not unique across units
+    // Use getLockerDetailsByUnitAndLockerId instead
     final snapshot = await _unitsRef.get();
     if (!snapshot.exists) return null;
 
@@ -82,7 +146,74 @@ class DatabaseService {
     return null;
   }
 
-  /// Set the 'locked' field of a locker to false (unlock)
+  /// Get locker details by unit ID and locker ID
+  Future<Map<String, dynamic>?> getLockerDetailsByUnitAndLockerId(
+    String unitId,
+    String lockerId,
+  ) async {
+    final snapshot = await _unitsRef.child(unitId).get();
+    if (!snapshot.exists) return null;
+
+    final data = snapshot.value as Map<Object?, Object?>?;
+    if (data != null &&
+        data['deleted'] == false &&
+        data['status'] == 'available' &&
+        data['lockers'] != null) {
+      final lockersRaw = data['lockers'];
+
+      // Handle both Map and List structures for lockers
+      if (lockersRaw is Map) {
+        // If lockers is stored as a Map (like {"1": {...}, "2": {...}})
+        final lockersData = lockersRaw as Map<Object?, Object?>;
+        if (lockersData.containsKey(lockerId)) {
+          final lockerData = lockersData[lockerId];
+          if (lockerData != null && lockerData is Map) {
+            final locker = Map<String, dynamic>.from(
+              lockerData as Map<Object?, Object?>,
+            );
+
+            // Convert integer values to boolean for app compatibility
+            locker['locked'] = (locker['locked'] == 1);
+            locker['confirmation'] = (locker['confirmation'] == 1);
+
+            return {
+              'unitSnapshot': snapshot,
+              'unitId': unitId,
+              'locker': locker,
+              'lockerId': lockerId,
+            };
+          }
+        }
+      } else if (lockersRaw is List) {
+        // If lockers is stored as a List
+        final lockersList = lockersRaw as List<Object?>;
+        for (var item in lockersList) {
+          if (item != null && item is Map) {
+            final lockerMap = item as Map<Object?, Object?>;
+            final locker = Map<String, dynamic>.from(lockerMap);
+
+            // Check if this is the locker we're looking for
+            if (locker['id'].toString() == lockerId) {
+              // Convert integer values to boolean for app compatibility
+              locker['locked'] = (locker['locked'] == 1);
+              locker['confirmation'] = (locker['confirmation'] == 1);
+
+              return {
+                'unitSnapshot': snapshot,
+                'unitId': unitId,
+                'locker': locker,
+                'lockerId': lockerId,
+              };
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Set the 'locked' field of a locker to false (unlock) - deprecated
+  @deprecated
   Future<bool> unlockLocker(String lockerId) async {
     final details = await getLockerDetailsById(lockerId);
     if (details == null) return false;
@@ -96,7 +227,16 @@ class DatabaseService {
     return true;
   }
 
-  /// Set the 'locked' field of a locker to a given value (lock/unlock)
+  /// Set the 'locked' field of a locker to false (unlock)
+  Future<bool> unlockLockerByUnitAndLockerId(
+    String unitId,
+    String lockerId,
+  ) async {
+    return await setLockerLockedByUnitAndLockerId(unitId, lockerId, false);
+  }
+
+  /// Set the 'locked' field of a locker to a given value (lock/unlock) - deprecated
+  @deprecated
   Future<bool> setLockerLocked(String lockerId, bool locked) async {
     final details = await getLockerDetailsById(lockerId);
     if (details == null) return false;
@@ -110,7 +250,61 @@ class DatabaseService {
     return true;
   }
 
-  /// Set the 'confirmation' field of a locker to a given value
+  /// Set the 'locked' field of a locker to a given value (lock/unlock)
+  Future<bool> setLockerLockedByUnitAndLockerId(
+    String unitId,
+    String lockerId,
+    bool locked,
+  ) async {
+    try {
+      final snapshot = await _unitsRef.child(unitId).get();
+      if (!snapshot.exists) return false;
+
+      final data = snapshot.value as Map<Object?, Object?>?;
+      if (data == null || data['lockers'] == null) return false;
+
+      final lockersRaw = data['lockers'];
+
+      if (lockersRaw is Map) {
+        // If lockers is stored as a Map, use direct path update
+        await _unitsRef.child(unitId).child('lockers').child(lockerId).update({
+          'locked': locked ? 1 : 0,
+        });
+        return true;
+      } else if (lockersRaw is List) {
+        // If lockers is stored as a List, update the entire array
+        final lockersList = List<Object?>.from(lockersRaw as List<Object?>);
+        bool found = false;
+
+        for (int i = 0; i < lockersList.length; i++) {
+          final item = lockersList[i];
+          if (item != null && item is Map) {
+            final lockerMap = Map<String, dynamic>.from(
+              item as Map<Object?, Object?>,
+            );
+            if (lockerMap['id'].toString() == lockerId) {
+              lockerMap['locked'] = locked ? 1 : 0;
+              lockersList[i] = lockerMap;
+              found = true;
+              break;
+            }
+          }
+        }
+
+        if (found) {
+          await _unitsRef.child(unitId).update({'lockers': lockersList});
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      print('Error updating locker locked status: $e');
+      return false;
+    }
+  }
+
+  /// Set the 'confirmation' field of a locker to a given value - deprecated
+  @deprecated
   Future<bool> setLockerConfirmation(String lockerId, bool confirmation) async {
     final details = await getLockerDetailsById(lockerId);
     if (details == null) return false;
@@ -124,9 +318,63 @@ class DatabaseService {
     return true;
   }
 
+  /// Set the 'confirmation' field of a locker to a given value
+  Future<bool> setLockerConfirmationByUnitAndLockerId(
+    String unitId,
+    String lockerId,
+    bool confirmation,
+  ) async {
+    try {
+      final snapshot = await _unitsRef.child(unitId).get();
+      if (!snapshot.exists) return false;
+
+      final data = snapshot.value as Map<Object?, Object?>?;
+      if (data == null || data['lockers'] == null) return false;
+
+      final lockersRaw = data['lockers'];
+
+      if (lockersRaw is Map) {
+        // If lockers is stored as a Map, use direct path update
+        await _unitsRef.child(unitId).child('lockers').child(lockerId).update({
+          'confirmation': confirmation ? 1 : 0,
+        });
+        return true;
+      } else if (lockersRaw is List) {
+        // If lockers is stored as a List, update the entire array
+        final lockersList = List<Object?>.from(lockersRaw as List<Object?>);
+        bool found = false;
+
+        for (int i = 0; i < lockersList.length; i++) {
+          final item = lockersList[i];
+          if (item != null && item is Map) {
+            final lockerMap = Map<String, dynamic>.from(
+              item as Map<Object?, Object?>,
+            );
+            if (lockerMap['id'].toString() == lockerId) {
+              lockerMap['confirmation'] = confirmation ? 1 : 0;
+              lockersList[i] = lockerMap;
+              found = true;
+              break;
+            }
+          }
+        }
+
+        if (found) {
+          await _unitsRef.child(unitId).update({'lockers': lockersList});
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      print('Error updating locker confirmation: $e');
+      return false;
+    }
+  }
+
   /// Add a reservation record to the reservations collection
   Future<bool> addReservation({
     required String userId,
+    required String unitId,
     required String lockerId,
     required DateTime timestamp,
   }) async {
@@ -134,6 +382,7 @@ class DatabaseService {
       await _reservationsRef.push().set({
         'timestamp': timestamp.toIso8601String(),
         'userID': userId,
+        'unitID': unitId,
         'lockerID': lockerId,
         'active': true,
       });
@@ -143,7 +392,8 @@ class DatabaseService {
     }
   }
 
-  /// Set the 'reserved' field of a locker to true
+  /// Set the 'reserved' field of a locker to true - deprecated
+  @deprecated
   Future<bool> setLockerReserved(String lockerId, bool reserved) async {
     final details = await getLockerDetailsById(lockerId);
     if (details == null) return false;
@@ -157,9 +407,124 @@ class DatabaseService {
     return true;
   }
 
-  /// Get the latest locker details (for polling)
+  /// Set the 'reserved' field of a locker
+  Future<bool> setLockerReservedByUnitAndLockerId(
+    String unitId,
+    String lockerId,
+    bool reserved,
+  ) async {
+    try {
+      final snapshot = await _unitsRef.child(unitId).get();
+      if (!snapshot.exists) return false;
+
+      final data = snapshot.value as Map<Object?, Object?>?;
+      if (data == null || data['lockers'] == null) return false;
+
+      final lockersRaw = data['lockers'];
+
+      if (lockersRaw is Map) {
+        // If lockers is stored as a Map, use direct path update
+        await _unitsRef.child(unitId).child('lockers').child(lockerId).update({
+          'reserved': reserved,
+        });
+        return true;
+      } else if (lockersRaw is List) {
+        // If lockers is stored as a List, update the entire array
+        final lockersList = List<Object?>.from(lockersRaw as List<Object?>);
+        bool found = false;
+
+        for (int i = 0; i < lockersList.length; i++) {
+          final item = lockersList[i];
+          if (item != null && item is Map) {
+            final lockerMap = Map<String, dynamic>.from(
+              item as Map<Object?, Object?>,
+            );
+            if (lockerMap['id'].toString() == lockerId) {
+              lockerMap['reserved'] = reserved;
+              lockersList[i] = lockerMap;
+              found = true;
+              break;
+            }
+          }
+        }
+
+        if (found) {
+          await _unitsRef.child(unitId).update({'lockers': lockersList});
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      print('Error updating locker reserved status: $e');
+      return false;
+    }
+  }
+
+  /// Set the 'reservedDocID' field of a locker
+  Future<bool> setLockerReservedDocId(
+    String unitId,
+    String lockerId,
+    String docId,
+  ) async {
+    try {
+      final snapshot = await _unitsRef.child(unitId).get();
+      if (!snapshot.exists) return false;
+
+      final data = snapshot.value as Map<Object?, Object?>?;
+      if (data == null || data['lockers'] == null) return false;
+
+      final lockersRaw = data['lockers'];
+
+      if (lockersRaw is Map) {
+        // If lockers is stored as a Map, use direct path update
+        await _unitsRef.child(unitId).child('lockers').child(lockerId).update({
+          'reservedDocID': docId,
+        });
+        return true;
+      } else if (lockersRaw is List) {
+        // If lockers is stored as a List, update the entire array
+        final lockersList = List<Object?>.from(lockersRaw as List<Object?>);
+        bool found = false;
+
+        for (int i = 0; i < lockersList.length; i++) {
+          final item = lockersList[i];
+          if (item != null && item is Map) {
+            final lockerMap = Map<String, dynamic>.from(
+              item as Map<Object?, Object?>,
+            );
+            if (lockerMap['id'].toString() == lockerId) {
+              lockerMap['reservedDocID'] = docId;
+              lockersList[i] = lockerMap;
+              found = true;
+              break;
+            }
+          }
+        }
+
+        if (found) {
+          await _unitsRef.child(unitId).update({'lockers': lockersList});
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      print('Error updating locker reservedDocID: $e');
+      return false;
+    }
+  }
+
+  /// Get the latest locker details (for polling) - deprecated
+  @deprecated
   Future<Map<String, dynamic>?> getLockerStatusById(String lockerId) async {
     return await getLockerDetailsById(lockerId);
+  }
+
+  /// Get the latest locker details (for polling)
+  Future<Map<String, dynamic>?> getLockerStatusByUnitAndLockerId(
+    String unitId,
+    String lockerId,
+  ) async {
+    return await getLockerDetailsByUnitAndLockerId(unitId, lockerId);
   }
 
   /// Get all active reservations for a user
