@@ -5,6 +5,7 @@ import 'package:customer_app/sevices/database.dart';
 import 'package:customer_app/utils/theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
+import 'PaymentPage.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -20,11 +21,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
   bool _isLoading = false;
   bool _hasPin = false;
+  int _payableBalance = 0;
 
   @override
   void initState() {
     super.initState();
-    _loadUserPin();
+    _loadUserData();
   }
 
   @override
@@ -33,23 +35,30 @@ class _ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
-  Future<void> _loadUserPin() async {
+  Future<void> _loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       setState(() => _isLoading = true);
       try {
+        // Load PIN
         final pin = await _databaseService.getUserPin(user.uid);
+        // Load payable balance
+        final payableBalance = await _databaseService.getUserPayableBalance(
+          user.uid,
+        );
+
         setState(() {
           _hasPin = pin != null && pin.isNotEmpty;
           if (_hasPin && pin != null) {
             _pinController.text = pin;
           }
+          _payableBalance = payableBalance;
         });
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error loading PIN: $e')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error loading user data: $e')),
+          );
         }
       } finally {
         setState(() => _isLoading = false);
@@ -119,6 +128,28 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  void _navigateToPayment() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || _payableBalance <= 0) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => PaymentPage(
+              total: _payableBalance,
+              reservationDocId:
+                  'payable_balance_${user.uid}', // Use a unique ID for payable balance payments
+              unitId: null, // No unit ID for payable balance payments
+              lokerId: 'payable_balance', // Use a placeholder locker ID
+            ),
+      ),
+    ).then((_) {
+      // Refresh user data when returning from payment page
+      _loadUserData();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -169,6 +200,111 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                       const SizedBox(height: 32),
+
+                      // Payable Balance Section
+                      if (_payableBalance > 0) ...[
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.red[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.red[200]!),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.account_balance_wallet,
+                                    color: Colors.red[700],
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Outstanding Balance',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium?.copyWith(
+                                      color: Colors.red[700],
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'You have an outstanding balance that needs to be paid.',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: Colors.red[600]),
+                              ),
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.red[300]!),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Amount Due:',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Rs. $_payableBalance',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyLarge?.copyWith(
+                                        color: Colors.red[700],
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red[600],
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    elevation: 2,
+                                  ),
+                                  onPressed: _navigateToPayment,
+                                  icon: const Icon(Icons.payment),
+                                  label: const Text(
+                                    'Pay Now',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                      ],
 
                       // PIN Section
                       Container(

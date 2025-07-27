@@ -577,4 +577,35 @@ class DatabaseService {
     final pin = await getUserPin(userId);
     return pin != null && pin.isNotEmpty;
   }
+
+  /// Get user payable balance by user ID
+  Future<int> getUserPayableBalance(String userId) async {
+    final snapshot = await _usersRef.child(userId).child('payable').get();
+    if (snapshot.exists) {
+      final value = snapshot.value;
+      if (value is int) {
+        return value;
+      } else if (value is String) {
+        return int.tryParse(value) ?? 0;
+      } else {
+        return 0;
+      }
+    }
+    return 0;
+  }
+
+  /// Set user payable balance
+  Future<bool> setUserPayableBalance(String userId, int amount) async {
+    try {
+      await _usersRef.child(userId).update({'payable': amount});
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Reset user payable balance to 0
+  Future<bool> resetUserPayableBalance(String userId) async {
+    return await setUserPayableBalance(userId, 0);
+  }
 }
