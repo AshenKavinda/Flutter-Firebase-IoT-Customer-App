@@ -40,89 +40,134 @@ class _PaymentPageState extends material.State<PaymentPage> {
       final db = DatabaseService();
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception('User not logged in');
-      // Set reservation active to false
-      await FirebaseDatabase.instance
-          .ref('reservations')
-          .child(widget.reservationDocId)
-          .update({'active': false});
-      // Set unit locker reserved to false
-      if (widget.unitId != null) {
-        await db.setLockerReservedByUnitAndLockerId(
-          widget.unitId!,
-          widget.lokerId,
-          false,
-        );
-      } else {
-        // Fallback for old reservations without unitId
-        await db.setLockerReserved(widget.lokerId, false);
-      }
-      // Add payment record
-      final paymentService = PaymentService();
-      await paymentService.addPayment(
-        reservationDocId: widget.reservationDocId,
-        total: widget.total,
-        userId: user.uid,
-        lokerId: widget.lokerId,
-        timestamp: DateTime.now(),
-      );
-      if (!mounted) return;
-      await material.showDialog(
-        context: context,
-        builder:
-            (context) => material.AlertDialog(
-              title: const material.Text('Payment Successful'),
-              content: const material.Text('Your payment was successful.'),
-              actions: [
-                material.TextButton(
-                  onPressed: () {
-                    material.Navigator.of(context).pop();
-                  },
-                  child: const material.Text('OK'),
-                ),
-              ],
-            ),
-      );
-      // --- Locker confirmation/locking logic (after dialog) ---
-      // 1. Set locked to false
-      if (widget.unitId != null) {
-        await db.setLockerLockedByUnitAndLockerId(
-          widget.unitId!,
-          widget.lokerId,
-          false,
-        );
-      } else {
-        // Fallback for old reservations without unitId
-        await db.setLockerLocked(widget.lokerId, false);
-      }
 
-      // Show thank you message after unlocking
-      if (!mounted) return;
-      await material.showDialog(
-        context: context,
-        builder:
-            (context) => material.AlertDialog(
-              title: const material.Text('Thank You!'),
-              content: const material.Text(
-                'Your locker has been unlocked. Thank you for using our service!',
-              ),
-              actions: [
-                material.TextButton(
-                  onPressed: () {
-                    material.Navigator.of(context).pop();
-                  },
-                  child: const material.Text('OK'),
+      // Check if this is a payable balance payment
+      final isPayableBalancePayment = widget.reservationDocId.startsWith(
+        'payable_balance_',
+      );
+
+      if (isPayableBalancePayment) {
+        // Handle payable balance payment
+        await db.resetUserPayableBalance(user.uid);
+
+        // Add payment record for payable balance
+        final paymentService = PaymentService();
+        await paymentService.addPayment(
+          reservationDocId: widget.reservationDocId,
+          total: widget.total,
+          userId: user.uid,
+          lokerId: widget.lokerId,
+          timestamp: DateTime.now(),
+        );
+
+        if (!mounted) return;
+        await material.showDialog(
+          context: context,
+          builder:
+              (context) => material.AlertDialog(
+                title: const material.Text('Payment Successful'),
+                content: const material.Text(
+                  'Your outstanding balance has been paid successfully.',
                 ),
-              ],
-            ),
-      );
-      // --- End Locker confirmation/locking logic ---
-      // Redirect to HomePage with reservation tab selected (index 1)
-      material.Navigator.of(context).pushAndRemoveUntil(
-        material.MaterialPageRoute(
-          builder: (context) => HomePage(initialTab: 1),
-        ),
-        (route) => false,
-      );
+                actions: [
+                  material.TextButton(
+                    onPressed: () {
+                      material.Navigator.of(context).pop();
+                    },
+                    child: const material.Text('OK'),
+                  ),
+                ],
+              ),
+        );
+
+        // Redirect back to profile
+        material.Navigator.of(context).pop();
+      } else {
+        // Handle regular reservation payment
+        // Set reservation active to false
+        await FirebaseDatabase.instance
+            .ref('reservations')
+            .child(widget.reservationDocId)
+            .update({'active': false});
+        // Set unit locker reserved to false
+        if (widget.unitId != null) {
+          await db.setLockerReservedByUnitAndLockerId(
+            widget.unitId!,
+            widget.lokerId,
+            false,
+          );
+        } else {
+          // Fallback for old reservations without unitId
+          await db.setLockerReserved(widget.lokerId, false);
+        }
+        // Add payment record
+        final paymentService = PaymentService();
+        await paymentService.addPayment(
+          reservationDocId: widget.reservationDocId,
+          total: widget.total,
+          userId: user.uid,
+          lokerId: widget.lokerId,
+          timestamp: DateTime.now(),
+        );
+        if (!mounted) return;
+        await material.showDialog(
+          context: context,
+          builder:
+              (context) => material.AlertDialog(
+                title: const material.Text('Payment Successful'),
+                content: const material.Text('Your payment was successful.'),
+                actions: [
+                  material.TextButton(
+                    onPressed: () {
+                      material.Navigator.of(context).pop();
+                    },
+                    child: const material.Text('OK'),
+                  ),
+                ],
+              ),
+        );
+        // --- Locker confirmation/locking logic (after dialog) ---
+        // 1. Set locked to false
+        if (widget.unitId != null) {
+          await db.setLockerLockedByUnitAndLockerId(
+            widget.unitId!,
+            widget.lokerId,
+            false,
+          );
+        } else {
+          // Fallback for old reservations without unitId
+          await db.setLockerLocked(widget.lokerId, false);
+        }
+
+        // Show thank you message after unlocking
+        if (!mounted) return;
+        await material.showDialog(
+          context: context,
+          builder:
+              (context) => material.AlertDialog(
+                title: const material.Text('Thank You!'),
+                content: const material.Text(
+                  'Your locker has been unlocked. Thank you for using our service!',
+                ),
+                actions: [
+                  material.TextButton(
+                    onPressed: () {
+                      material.Navigator.of(context).pop();
+                    },
+                    child: const material.Text('OK'),
+                  ),
+                ],
+              ),
+        );
+        // --- End Locker confirmation/locking logic ---
+        // Redirect to HomePage with reservation tab selected (index 1)
+        material.Navigator.of(context).pushAndRemoveUntil(
+          material.MaterialPageRoute(
+            builder: (context) => HomePage(initialTab: 1),
+          ),
+          (route) => false,
+        );
+      }
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -136,6 +181,10 @@ class _PaymentPageState extends material.State<PaymentPage> {
 
   @override
   material.Widget build(material.BuildContext context) {
+    final isPayableBalancePayment = widget.reservationDocId.startsWith(
+      'payable_balance_',
+    );
+
     return material.Scaffold(
       appBar: material.AppBar(
         title: const material.Text('Payment'),
@@ -159,7 +208,10 @@ class _PaymentPageState extends material.State<PaymentPage> {
                     crossAxisAlignment: material.CrossAxisAlignment.center,
                     children: [
                       material.Card(
-                        color: AppColors.tealBlue,
+                        color:
+                            isPayableBalancePayment
+                                ? material.Colors.red[600]
+                                : AppColors.tealBlue,
                         shape: material.RoundedRectangleBorder(
                           borderRadius: material.BorderRadius.circular(16),
                         ),
@@ -169,13 +221,17 @@ class _PaymentPageState extends material.State<PaymentPage> {
                           child: material.Column(
                             children: [
                               material.Icon(
-                                material.Icons.payment,
+                                isPayableBalancePayment
+                                    ? material.Icons.account_balance_wallet
+                                    : material.Icons.payment,
                                 color: material.Colors.white,
                                 size: 40,
                               ),
                               const material.SizedBox(height: 16),
                               material.Text(
-                                'Total Payment',
+                                isPayableBalancePayment
+                                    ? 'Outstanding Balance'
+                                    : 'Total Payment',
                                 style: material.TextStyle(
                                   color: material.Colors.white70,
                                   fontSize: 16,
@@ -193,7 +249,9 @@ class _PaymentPageState extends material.State<PaymentPage> {
                               ),
                               const material.SizedBox(height: 12),
                               material.Text(
-                                'Reservation ID: ${widget.reservationDocId}',
+                                isPayableBalancePayment
+                                    ? 'Payment ID: ${widget.reservationDocId}'
+                                    : 'Reservation ID: ${widget.reservationDocId}',
                                 style: material.TextStyle(
                                   color: material.Colors.white70,
                                   fontSize: 14,

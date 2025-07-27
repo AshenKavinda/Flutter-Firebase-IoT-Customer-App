@@ -37,6 +37,20 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
     }
   }
 
+  Future<int> _checkUserPayableBalance() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return 0;
+
+    try {
+      final db = DatabaseService();
+      final payableBalance = await db.getUserPayableBalance(user.uid);
+      return payableBalance;
+    } catch (e) {
+      print('Error checking payable balance: $e');
+      return 0;
+    }
+  }
+
   void _showPinRequiredDialog() {
     showDialog(
       context: context,
@@ -80,6 +94,49 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
     );
   }
 
+  void _showPayableBalanceDialog(int balance) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.account_balance_wallet, color: Colors.red[700]),
+              const SizedBox(width: 8),
+              const Text('Outstanding Balance'),
+            ],
+          ),
+          content: Text(
+            'You have an outstanding balance of Rs. $balance that needs to be paid before making a new reservation. '
+            'Please go to your profile page to pay the balance.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[600],
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const ProfilePage()),
+                );
+              },
+              child: const Text('Pay Now'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _reserveLocker(String lockerId) async {
     setState(() {
       _isLoading = true;
@@ -93,6 +150,16 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
           _isLoading = false;
         });
         _showPinRequiredDialog();
+        return;
+      }
+
+      // Check if user has payable balance
+      final payableBalance = await _checkUserPayableBalance();
+      if (payableBalance > 0) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showPayableBalanceDialog(payableBalance);
         return;
       }
 
