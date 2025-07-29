@@ -71,7 +71,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [AppColors.navyBlue, AppColors.tealBlue],
+              colors: [Color(0xFF6A4C93), Color(0xFF9C27B0)],
             ),
             borderRadius: const BorderRadius.only(
               bottomLeft: Radius.circular(30),

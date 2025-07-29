@@ -3,7 +3,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../sevices/database.dart';
 import 'package:firebase_database/firebase_database.dart';
-import '../utils/theme.dart';
 import 'ConfirmReservationPage.dart';
 import 'Profile.dart';
 
@@ -59,7 +58,7 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
         return AlertDialog(
           title: Row(
             children: [
-              Icon(Icons.lock, color: AppColors.navyBlue),
+              Icon(Icons.lock, color: Color(0xFF6A4C93)),
               const SizedBox(width: 8),
               const Text('PIN Required'),
             ],
@@ -77,7 +76,7 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.navyBlue,
+                backgroundColor: Color(0xFF6A4C93),
                 foregroundColor: Colors.white,
               ),
               onPressed: () {
@@ -232,7 +231,7 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [AppColors.navyBlue, AppColors.tealBlue],
+                        colors: [Color(0xFF6A4C93), Color(0xFF9C27B0)],
                       ),
                       borderRadius: const BorderRadius.only(
                         bottomLeft: Radius.circular(30),
@@ -330,7 +329,7 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 CircularProgressIndicator(
-                                  color: AppColors.tealBlue,
+                                  color: Color(0xFF9C27B0),
                                   strokeWidth: 3,
                                 ),
                                 const SizedBox(height: 20),
@@ -459,13 +458,13 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                                 colors: [
-                                  AppColors.tealBlue.withOpacity(0.1),
-                                  AppColors.navyBlue.withOpacity(0.1),
+                                  Color(0xFF9C27B0).withOpacity(0.1),
+                                  Color(0xFF6A4C93).withOpacity(0.1),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: AppColors.tealBlue.withOpacity(0.3),
+                                color: Color(0xFF9C27B0).withOpacity(0.3),
                                 width: 1,
                               ),
                             ),
@@ -474,12 +473,12 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
                                 Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: AppColors.tealBlue.withOpacity(0.2),
+                                    color: Color(0xFF9C27B0).withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(
                                     Icons.info_rounded,
-                                    color: AppColors.tealBlue,
+                                    color: Color(0xFF9C27B0),
                                     size: 20,
                                   ),
                                 ),
@@ -488,7 +487,7 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
                                   child: Text(
                                     'A PIN is required to make reservations. Tap on available lockers to reserve.',
                                     style: TextStyle(
-                                      color: AppColors.tealBlue,
+                                      color: Color(0xFF9C27B0),
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -508,15 +507,12 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
                               gradient: LinearGradient(
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
-                                colors: [
-                                  AppColors.tealBlue,
-                                  AppColors.navyBlue,
-                                ],
+                                colors: [Color(0xFF9C27B0), Color(0xFF6A4C93)],
                               ),
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.tealBlue.withOpacity(0.3),
+                                  color: Color(0xFF9C27B0).withOpacity(0.3),
                                   blurRadius: 15,
                                   offset: const Offset(0, 8),
                                 ),
@@ -568,7 +564,7 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
                           Text(
                             'Select Locker',
                             style: TextStyle(
-                              color: AppColors.navyBlue,
+                              color: Color(0xFF6A4C93),
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
                             ),
@@ -651,7 +647,7 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
                                               Text(
                                                 'Locker ${locker['id']}',
                                                 style: TextStyle(
-                                                  color: AppColors.navyBlue,
+                                                  color: Color(0xFF6A4C93),
                                                   fontSize: 18,
                                                   fontWeight: FontWeight.bold,
                                                 ),
@@ -725,8 +721,8 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
                                             decoration: BoxDecoration(
                                               gradient: LinearGradient(
                                                 colors: [
-                                                  AppColors.navyBlue,
-                                                  AppColors.tealBlue,
+                                                  Color(0xFF6A4C93),
+                                                  Color(0xFF9C27B0),
                                                 ],
                                               ),
                                               borderRadius:
@@ -780,7 +776,7 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       CircularProgressIndicator(
-                        color: AppColors.tealBlue,
+                        color: Color(0xFF9C27B0),
                         strokeWidth: 3,
                       ),
                       const SizedBox(height: 20),

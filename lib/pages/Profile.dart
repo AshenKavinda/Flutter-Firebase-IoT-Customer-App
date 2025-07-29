@@ -2,7 +2,6 @@ import 'package:customer_app/pages/LoginPage.dart';
 import 'package:flutter/material.dart';
 import 'package:customer_app/auth/auth_service.dart';
 import 'package:customer_app/sevices/database.dart';
-import 'package:customer_app/utils/theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'PaymentPage.dart';
@@ -176,7 +175,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       CircularProgressIndicator(
-                        color: AppColors.tealBlue,
+                        color: Color(0xFF9C27B0),
                         strokeWidth: 3,
                       ),
                       const SizedBox(height: 20),
@@ -198,7 +197,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [AppColors.navyBlue, AppColors.tealBlue],
+                          colors: [Color(0xFF6A4C93), Color(0xFF9C27B0)],
                         ),
                         borderRadius: const BorderRadius.only(
                           bottomLeft: Radius.circular(40),
@@ -231,7 +230,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 child: Icon(
                                   Icons.person_rounded,
                                   size: 80,
-                                  color: AppColors.navyBlue,
+                                  color: Color(0xFF6A4C93),
                                 ),
                               ),
                             ),
@@ -458,8 +457,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                           decoration: BoxDecoration(
                                             gradient: LinearGradient(
                                               colors: [
-                                                AppColors.navyBlue,
-                                                AppColors.tealBlue,
+                                                Color(0xFF6A4C93),
+                                                Color(0xFF9C27B0),
                                               ],
                                             ),
                                             borderRadius: BorderRadius.circular(
@@ -482,7 +481,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                                   ? 'Update Security PIN'
                                                   : 'Create Security PIN',
                                               style: TextStyle(
-                                                color: AppColors.navyBlue,
+                                                color: Color(0xFF6A4C93),
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -517,7 +516,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                           hintText: '••••',
                                           prefixIcon: Icon(
                                             Icons.lock_outline_rounded,
-                                            color: AppColors.tealBlue,
+                                            color: Color(0xFF9C27B0),
                                           ),
                                           border: InputBorder.none,
                                           contentPadding: const EdgeInsets.all(
@@ -553,15 +552,16 @@ class _ProfilePageState extends State<ProfilePage> {
                                           begin: Alignment.centerLeft,
                                           end: Alignment.centerRight,
                                           colors: [
-                                            AppColors.tealBlue,
-                                            AppColors.navyBlue,
+                                            Color(0xFF9C27B0),
+                                            Color(0xFF6A4C93),
                                           ],
                                         ),
                                         borderRadius: BorderRadius.circular(15),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: AppColors.tealBlue
-                                                .withOpacity(0.3),
+                                            color: Color(
+                                              0xFF9C27B0,
+                                            ).withOpacity(0.3),
                                             blurRadius: 10,
                                             offset: const Offset(0, 3),
                                           ),

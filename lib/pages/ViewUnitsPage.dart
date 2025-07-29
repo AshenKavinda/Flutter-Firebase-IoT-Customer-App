@@ -170,7 +170,7 @@ class _ViewUnitsPageState extends State<ViewUnitsPage> {
                   children: [
                     Icon(
                       Icons.search_rounded,
-                      color: AppColors.tealBlue,
+                      color: Color(0xFF9C27B0),
                       size: 24,
                     ),
                     const SizedBox(width: 15),
@@ -179,7 +179,7 @@ class _ViewUnitsPageState extends State<ViewUnitsPage> {
                         controller: _searchController,
                         style: TextStyle(fontSize: 16, color: Colors.grey[800]),
                         decoration: InputDecoration(
-                          hintText: 'Search parking units...',
+                          hintText: 'Search locker units...',
                           hintStyle: TextStyle(
                             color: Colors.grey[500],
                             fontSize: 16,
@@ -195,7 +195,7 @@ class _ViewUnitsPageState extends State<ViewUnitsPage> {
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [AppColors.navyBlue, AppColors.tealBlue],
+                          colors: [Color(0xFF6A4C93), Color(0xFF9C27B0)],
                         ),
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -222,12 +222,12 @@ class _ViewUnitsPageState extends State<ViewUnitsPage> {
                 ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.navyBlue, AppColors.tealBlue],
+                    colors: [Color(0xFF6A4C93), Color(0xFF9C27B0)],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.navyBlue.withOpacity(0.3),
+                      color: Color(0xFF6A4C93).withOpacity(0.3),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     ),
@@ -268,12 +268,12 @@ class _ViewUnitsPageState extends State<ViewUnitsPage> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [AppColors.navyBlue, AppColors.tealBlue],
+                    colors: [Color(0xFF6A4C93), Color(0xFF9C27B0)],
                   ),
                   borderRadius: BorderRadius.circular(25),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.navyBlue.withOpacity(0.4),
+                      color: Color(0xFF6A4C93).withOpacity(0.4),
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),

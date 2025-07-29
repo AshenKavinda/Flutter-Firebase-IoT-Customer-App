@@ -53,7 +53,7 @@ class _MyReservationPageState extends State<MyReservationPage> {
                         ],
                       ),
                       child: CircularProgressIndicator(
-                        color: AppColors.tealBlue,
+                        color: Color(0xFF9C27B0),
                         strokeWidth: 3,
                       ),
                     ),
@@ -156,14 +156,14 @@ class _MyReservationPageState extends State<MyReservationPage> {
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    AppColors.navyBlue,
-                                    AppColors.tealBlue,
+                                    Color(0xFF6A4C93),
+                                    Color(0xFF9C27B0),
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(15),
                               ),
                               child: Icon(
-                                Icons.local_parking_rounded,
+                                Icons.storage_rounded,
                                 color: Colors.white,
                                 size: 24,
                               ),
@@ -174,9 +174,9 @@ class _MyReservationPageState extends State<MyReservationPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Spot $lockerId',
+                                    'Locker $lockerId',
                                     style: TextStyle(
-                                      color: AppColors.navyBlue,
+                                      color: Color(0xFF6A4C93),
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -240,7 +240,7 @@ class _MyReservationPageState extends State<MyReservationPage> {
                                   Text(
                                     '${timestamp.toLocal().toString().split('.')[0]}',
                                     style: TextStyle(
-                                      color: AppColors.navyBlue,
+                                      color: Color(0xFF6A4C93),
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -257,12 +257,12 @@ class _MyReservationPageState extends State<MyReservationPage> {
                             gradient: LinearGradient(
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
-                              colors: [AppColors.tealBlue, AppColors.navyBlue],
+                              colors: [Color(0xFF9C27B0), Color(0xFF6A4C93)],
                             ),
                             borderRadius: BorderRadius.circular(15),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.tealBlue.withOpacity(0.3),
+                                color: Color(0xFF9C27B0).withOpacity(0.3),
                                 blurRadius: 10,
                                 offset: const Offset(0, 3),
                               ),
