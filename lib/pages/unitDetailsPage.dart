@@ -255,7 +255,7 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
                                     borderRadius: BorderRadius.circular(15),
                                   ),
                                   child: Icon(
-                                    Icons.local_parking_rounded,
+                                    Icons.storage_rounded,
                                     color: Colors.white,
                                     size: 28,
                                   ),
@@ -265,7 +265,7 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Parking Unit',
+                                      'Locker Unit',
                                       style: TextStyle(
                                         color: Colors.white.withOpacity(0.8),
                                         fontSize: 16,
@@ -541,7 +541,7 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Available Spots',
+                                      'Available Lockers',
                                       style: TextStyle(
                                         color: Colors.white.withOpacity(0.8),
                                         fontSize: 16,
@@ -566,7 +566,7 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
 
                           // Section title
                           Text(
-                            'Select Parking Spot',
+                            'Select Locker',
                             style: TextStyle(
                               color: AppColors.navyBlue,
                               fontSize: 22,
@@ -649,7 +649,7 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                'Spot ${locker['id']}',
+                                                'Locker ${locker['id']}',
                                                 style: TextStyle(
                                                   color: AppColors.navyBlue,
                                                   fontSize: 18,
