@@ -214,219 +214,587 @@ class _UnitDetailsPageState extends State<UnitDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Unit Details'),
-        backgroundColor: AppColors.navyBlue,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+      backgroundColor: Colors.grey[50],
       body: Stack(
         children: [
-          FutureBuilder<DataSnapshot?>(
-            future: _fetchUnit(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                  child: CircularProgressIndicator(color: AppColors.navyBlue),
-                );
-              }
-              if (!snapshot.hasData ||
-                  snapshot.data == null ||
-                  !snapshot.data!.exists) {
-                return Center(
-                  child: Text(
-                    'No data found for this unit.',
-                    style: TextStyle(color: AppColors.navyBlue),
-                  ),
-                );
-              }
-              final data = Map<String, dynamic>.from(
-                snapshot.data!.value as Map<Object?, Object?>,
-              );
-
-              // Handle both Map and List structures for lockers
-              final lockersRaw = data['lockers'];
-              List<Map<String, dynamic>> lockers = [];
-
-              if (lockersRaw != null) {
-                if (lockersRaw is Map) {
-                  // If lockers is a Map (like {"1": {...}, "2": {...}})
-                  final lockersData = Map<String, dynamic>.from(lockersRaw);
-                  lockers =
-                      lockersData.values.where((e) => e != null && e is Map).map((
-                        e,
-                      ) {
-                        final locker = Map<String, dynamic>.from(
-                          e as Map<Object?, Object?>,
-                        );
-                        // Convert integer values to boolean for app compatibility
-                        locker['locked'] = (locker['locked'] == 1);
-                        locker['confirmation'] = (locker['confirmation'] == 1);
-                        return locker;
-                      }).toList();
-                } else if (lockersRaw is List) {
-                  // If lockers is a List
-                  lockers =
-                      lockersRaw.where((e) => e != null && e is Map).map((e) {
-                        final locker = Map<String, dynamic>.from(
-                          e as Map<Object?, Object?>,
-                        );
-                        // Convert integer values to boolean for app compatibility
-                        locker['locked'] = (locker['locked'] == 1);
-                        locker['confirmation'] = (locker['confirmation'] == 1);
-                        return locker;
-                      }).toList();
-                }
-              }
-              final availableCount =
-                  lockers.where((l) => l['reserved'] == false).length;
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Info card about PIN requirement
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16.0),
-                    margin: const EdgeInsets.all(16.0),
+          CustomScrollView(
+            slivers: [
+              // Modern header with gradient
+              SliverAppBar(
+                expandedHeight: 200,
+                floating: false,
+                pinned: true,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
                     decoration: BoxDecoration(
-                      color: AppColors.tealBlue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.tealBlue.withOpacity(0.3),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [AppColors.navyBlue, AppColors.tealBlue],
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(30),
+                        bottomRight: Radius.circular(30),
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline, color: AppColors.tealBlue),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'A PIN is required to make reservations. Tap on available lockers to reserve.',
-                            style: TextStyle(
-                              color: AppColors.tealBlue,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Card(
-                      color: AppColors.tealBlue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                    child: SafeArea(
                       child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.lock, color: Colors.white, size: 28),
-                            SizedBox(width: 12),
-                            Text(
-                              'Available Lockers: $availableCount',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                  child: Icon(
+                                    Icons.local_parking_rounded,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ),
+                                ),
+                                const SizedBox(width: 15),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Parking Unit',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.8),
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    Text(
+                                      widget.unitId,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
                     ),
                   ),
-                  Divider(color: AppColors.navyBlue, thickness: 1),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: lockers.length,
-                      itemBuilder: (context, index) {
-                        final locker = lockers[index];
-                        final isAvailable =
-                            locker['reserved'] == false &&
-                            locker['status'] == 'available';
-                        return Card(
-                          color: Colors.white,
-                          margin: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 6,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: ListTile(
-                            leading: Icon(
-                              isAvailable ? Icons.check_circle : Icons.cancel,
-                              color: isAvailable ? Colors.green : Colors.red,
-                            ),
-                            title: Text(
-                              'Locker ID: ${locker['id']}',
-                              style: TextStyle(
-                                color: AppColors.navyBlue,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  isAvailable ? 'Available' : 'Not Available',
-                                  style: TextStyle(
-                                    color:
-                                        isAvailable ? Colors.green : Colors.red,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                ),
+                leading: Container(
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_ios_rounded,
+                      color: Colors.white,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+              ),
+              // Content
+              SliverToBoxAdapter(
+                child: FutureBuilder<DataSnapshot?>(
+                  future: _fetchUnit(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Container(
+                        height: 400,
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(30),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 5),
                                 ),
-                                if (locker['price'] != null)
-                                  Text(
-                                    'Price: \$${locker['price']}',
-                                    style: TextStyle(
-                                      color: AppColors.navyBlue,
-                                      fontSize: 12,
-                                    ),
-                                  ),
                               ],
                             ),
-                            trailing:
-                                isAvailable
-                                    ? ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.navyBlue,
-                                        foregroundColor: Colors.white,
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 8,
-                                        ),
-                                      ),
-                                      onPressed:
-                                          () => _reserveLocker(
-                                            locker['id'].toString(),
-                                          ),
-                                      child: Text('Reserve'),
-                                    )
-                                    : null,
-                            onTap:
-                                isAvailable
-                                    ? () =>
-                                        _reserveLocker(locker['id'].toString())
-                                    : null,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(
+                                  color: AppColors.tealBlue,
+                                  strokeWidth: 3,
+                                ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  'Loading unit details...',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                        ),
+                      );
+                    }
+                    if (!snapshot.hasData ||
+                        snapshot.data == null ||
+                        !snapshot.data!.exists) {
+                      return Container(
+                        height: 400,
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.all(30),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(25),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.error_outline_rounded,
+                                  color: Colors.grey[400],
+                                  size: 80,
+                                ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  'Unit Not Found',
+                                  style: TextStyle(
+                                    color: Colors.grey[700],
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'No data available for this unit',
+                                  style: TextStyle(
+                                    color: Colors.grey[500],
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    final data = Map<String, dynamic>.from(
+                      snapshot.data!.value as Map<Object?, Object?>,
+                    );
+
+                    // Handle both Map and List structures for lockers
+                    final lockersRaw = data['lockers'];
+                    List<Map<String, dynamic>> lockers = [];
+
+                    if (lockersRaw != null) {
+                      if (lockersRaw is Map) {
+                        // If lockers is a Map (like {"1": {...}, "2": {...}})
+                        final lockersData = Map<String, dynamic>.from(
+                          lockersRaw,
                         );
-                      },
-                    ),
-                  ),
-                ],
-              );
-            },
+                        lockers =
+                            lockersData.values
+                                .where((e) => e != null && e is Map)
+                                .map((e) {
+                                  final locker = Map<String, dynamic>.from(
+                                    e as Map<Object?, Object?>,
+                                  );
+                                  // Convert integer values to boolean for app compatibility
+                                  locker['locked'] = (locker['locked'] == 1);
+                                  locker['confirmation'] =
+                                      (locker['confirmation'] == 1);
+                                  return locker;
+                                })
+                                .toList();
+                      } else if (lockersRaw is List) {
+                        // If lockers is a List
+                        lockers =
+                            lockersRaw.where((e) => e != null && e is Map).map((
+                              e,
+                            ) {
+                              final locker = Map<String, dynamic>.from(
+                                e as Map<Object?, Object?>,
+                              );
+                              // Convert integer values to boolean for app compatibility
+                              locker['locked'] = (locker['locked'] == 1);
+                              locker['confirmation'] =
+                                  (locker['confirmation'] == 1);
+                              return locker;
+                            }).toList();
+                      }
+                    }
+                    final availableCount =
+                        lockers.where((l) => l['reserved'] == false).length;
+
+                    return Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Info banner
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [
+                                  AppColors.tealBlue.withOpacity(0.1),
+                                  AppColors.navyBlue.withOpacity(0.1),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: AppColors.tealBlue.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.tealBlue.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    Icons.info_rounded,
+                                    color: AppColors.tealBlue,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 15),
+                                Expanded(
+                                  child: Text(
+                                    'A PIN is required to make reservations. Tap on available lockers to reserve.',
+                                    style: TextStyle(
+                                      color: AppColors.tealBlue,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Stats card
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(25),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  AppColors.tealBlue,
+                                  AppColors.navyBlue,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.tealBlue.withOpacity(0.3),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(15),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                  child: Icon(
+                                    Icons.dashboard_rounded,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Available Spots',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.8),
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      '$availableCount',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 25),
+
+                          // Section title
+                          Text(
+                            'Select Parking Spot',
+                            style: TextStyle(
+                              color: AppColors.navyBlue,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 15),
+
+                          // Lockers grid
+                          ...lockers.map((locker) {
+                            final isAvailable =
+                                locker['reserved'] == false &&
+                                locker['status'] == 'available';
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 15),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.08),
+                                    blurRadius: 15,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                                border: Border.all(
+                                  color:
+                                      isAvailable
+                                          ? Colors.green.withOpacity(0.3)
+                                          : Colors.red.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(20),
+                                  onTap:
+                                      isAvailable
+                                          ? () => _reserveLocker(
+                                            locker['id'].toString(),
+                                          )
+                                          : null,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors:
+                                                  isAvailable
+                                                      ? [
+                                                        Colors.green.shade400,
+                                                        Colors.green.shade600,
+                                                      ]
+                                                      : [
+                                                        Colors.red.shade400,
+                                                        Colors.red.shade600,
+                                                      ],
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              15,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            isAvailable
+                                                ? Icons.lock_open_rounded
+                                                : Icons.lock_rounded,
+                                            color: Colors.white,
+                                            size: 24,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 15),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Spot ${locker['id']}',
+                                                style: TextStyle(
+                                                  color: AppColors.navyBlue,
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 5),
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 12,
+                                                          vertical: 4,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          isAvailable
+                                                              ? Colors.green
+                                                                  .withOpacity(
+                                                                    0.1,
+                                                                  )
+                                                              : Colors.red
+                                                                  .withOpacity(
+                                                                    0.1,
+                                                                  ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                    child: Text(
+                                                      isAvailable
+                                                          ? 'Available'
+                                                          : 'Occupied',
+                                                      style: TextStyle(
+                                                        color:
+                                                            isAvailable
+                                                                ? Colors
+                                                                    .green[700]
+                                                                : Colors
+                                                                    .red[700],
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  if (locker['price'] !=
+                                                      null) ...[
+                                                    const SizedBox(width: 10),
+                                                    Text(
+                                                      '\$${locker['price']}',
+                                                      style: TextStyle(
+                                                        color: Colors.grey[600],
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (isAvailable)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 20,
+                                              vertical: 10,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  AppColors.navyBlue,
+                                                  AppColors.tealBlue,
+                                                ],
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(15),
+                                            ),
+                                            child: Text(
+                                              'Reserve',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+
+                          const SizedBox(height: 40),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
           // Loading overlay
           if (_isLoading)
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withOpacity(0.5),
               child: Center(
-                child: CircularProgressIndicator(color: AppColors.navyBlue),
+                child: Container(
+                  padding: const EdgeInsets.all(30),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(
+                        color: AppColors.tealBlue,
+                        strokeWidth: 3,
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Processing reservation...',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
         ],
