@@ -301,13 +301,13 @@ class _ViewUnitsPageState extends State<ViewUnitsPage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            Icons.calendar_today_rounded,
+                            Icons.storage_rounded,
                             color: Colors.white,
                             size: 20,
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            'Book Now',
+                            'Reserve Locker',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
